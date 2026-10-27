@@ -6,299 +6,772 @@
 <title>Duet Console</title>
 <style>
 :root{
-  --bg:#f5f6f4; --panel:#ffffff; --ink:#15191c; --muted:#5d6670; --line:#e1e4e0;
-  --accent:#0b7a5c; --accent-soft:#e3f3ec; --base:#8a929b; --warm:#d9772b; --cool:#3f7fc6;
-  --bad:#c23b32; --good:#0b7a5c;
+  --bg:#f3f4f1; --panel:#ffffff; --panel2:#f8f9f7; --ink:#14181b; --muted:#5b646d; --faint:#8a939b; --line:#e0e3de;
+  --accent:#0b7a5c; --accent-ink:#ffffff; --accent-soft:#e1f2ea; --base:#7d8790; --warm:#c96a1e; --warm-soft:#f8e7d6;
+  --cool:#2f6fb3; --cool-soft:#dde9f6; --bad:#c23b32; --bad-soft:#f8e1df; --amber:#b7791f; --amber-soft:#f8eed9;
+  --shadow:0 1px 2px rgba(20,24,27,.05),0 4px 16px rgba(20,24,27,.04);
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
 }
 @media (prefers-color-scheme: dark){
-  :root{ --bg:#101315; --panel:#181c1f; --ink:#e9ecee; --muted:#98a2ab; --line:#2a3035;
-    --accent:#3fc59a; --accent-soft:#16302a; --base:#7c858e; --warm:#e8954f; --cool:#6aa3e0; --bad:#ef6a5f; --good:#3fc59a;}
+  :root{ --bg:#0f1214; --panel:#171b1e; --panel2:#1c2124; --ink:#e8ebed; --muted:#9aa3ab; --faint:#6d767e; --line:#2a3035;
+    --accent:#35c08f; --accent-ink:#06261b; --accent-soft:#143027; --base:#8a939b; --warm:#e8954f; --warm-soft:#3a2a1c;
+    --cool:#6aa3e0; --cool-soft:#1b2a3c; --bad:#ef6a5f; --bad-soft:#3a1d1b; --amber:#e3b25a; --amber-soft:#352a14;
+    --shadow:none;}
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "Inter",system-ui,-apple-system,"Segoe UI",sans-serif}
-header{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;padding:14px 20px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:2}
-.brand{font-weight:700;font-size:16px;letter-spacing:.2px}
-.brand span{color:var(--accent)}
-.clock{font-variant-numeric:tabular-nums;font-weight:600}
-.muted{color:var(--muted)}
-.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
-.seg button{border:0;background:transparent;color:var(--ink);padding:6px 10px;cursor:pointer;font:inherit}
-.seg button.on{background:var(--accent);color:#fff}
-button.btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:7px 11px;cursor:pointer;font:inherit}
-button.btn:hover{border-color:var(--accent)}
-main{max-width:1280px;margin:0 auto;padding:18px 20px 40px;display:grid;gap:16px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.grid3{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
-@media (max-width:900px){.grid2,.grid3{grid-template-columns:1fr}}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
-.card h2{margin:0 0 2px;font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:600}
-.room.duet{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
-.roomhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-.big{font-size:44px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1;margin:8px 0 2px}
-.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 14px;margin-top:12px}
-.kv div b{display:block;font-size:18px;font-variant-numeric:tabular-nums}
-.kv div small{color:var(--muted)}
-.pill{display:inline-block;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:600;background:var(--line)}
-.pill.ok{background:var(--accent-soft);color:var(--good)}
-.pill.warm{background:#f7e6d8;color:#9a4f12}
-.pill.cool{background:#dfeaf7;color:#245b97}
-@media (prefers-color-scheme: dark){.pill.warm{background:#3a2a1c;color:#f0b07a}.pill.cool{background:#1b2a3c;color:#9cc3ef}}
-.fanicon{width:30px;height:30px;vertical-align:middle;margin-left:6px}
-.fanicon g{transform-origin:15px 15px;animation:spin 1s linear infinite}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "Inter","Segoe UI",system-ui,-apple-system,sans-serif}
+button,select,input{font:inherit;color:inherit}
+.muted{color:var(--muted)} .faint{color:var(--faint)} .num{font-variant-numeric:tabular-nums}
+/* ---------- header */
+header{position:sticky;top:0;z-index:20;background:var(--panel);border-bottom:1px solid var(--line)}
+.hbar{max-width:1320px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:10px 20px}
+.brand{font-weight:750;font-size:16px;letter-spacing:.1px;display:flex;align-items:center;gap:8px}
+.logo{width:26px;height:26px;border-radius:7px;background:var(--accent);display:grid;place-items:center;color:var(--accent-ink);font-weight:800;font-size:13px}
+.conn{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--panel2);border:1px solid var(--line)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--faint)}
+.conn.live .dot{background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.conn.off .dot{background:var(--bad)} .conn.off{color:var(--bad)}
+.clock{display:flex;flex-direction:column;line-height:1.15}
+.clock b{font-size:17px;font-variant-numeric:tabular-nums}
+.clock small{color:var(--muted);font-size:12px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--panel)}
+.seg button{border:0;background:transparent;padding:6px 10px;cursor:pointer;white-space:nowrap}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:9px;padding:7px 12px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--accent)} .btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:650}
+.btn.icon{padding:7px 10px;min-width:40px}
+.tabs{display:flex;gap:2px;margin-left:auto}
+.tabs button{border:0;background:transparent;padding:8px 12px;border-radius:8px;cursor:pointer;color:var(--muted);font-weight:600}
+.tabs button.on{background:var(--accent-soft);color:var(--accent)}
+.notice{max-width:1320px;margin:10px auto 0;padding:0 20px}
+.notice div{border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:6px}
+.notice .err{background:var(--bad-soft);color:var(--bad);font-weight:600}
+.notice .info{background:var(--amber-soft);color:var(--amber)}
+.progress{height:4px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:6px}
+.progress i{display:block;height:100%;background:var(--accent);transition:width .2s}
+/* ---------- layout */
+main{max-width:1320px;margin:0 auto;padding:14px 20px 48px;display:grid;gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow)}
+.card h2{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);font-weight:650}
+.card .sub{font-size:12.5px;color:var(--muted);margin-top:3px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1.15fr .85fr;gap:14px}
+@media (max-width:960px){.g2,.g3{grid-template-columns:1fr}.tabs{margin-left:0}}
+[hidden]{display:none!important}
+/* ---------- scenario */
+.scen{display:grid;grid-template-columns:repeat(12,1fr);gap:12px 14px;margin-top:12px}
+.f{display:flex;flex-direction:column;gap:5px;grid-column:span 3}
+.f.wide{grid-column:span 12} .f.half{grid-column:span 6} .f.third{grid-column:span 4} .f.two{grid-column:span 2}
+@media (max-width:960px){.f,.f.half,.f.third,.f.two{grid-column:span 6}}
+.f label{font-size:12px;color:var(--muted);font-weight:600}
+.f select,.f input[type=number]{padding:7px 9px;border:1px solid var(--line);border-radius:9px;background:var(--panel)}
+.months{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
+.months button{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:7px 4px;cursor:pointer;text-align:center;line-height:1.2}
+.months button b{display:block;font-size:13px}
+.months button small{font-size:11px;color:var(--muted)}
+.months button.on{border-color:var(--accent);background:var(--accent-soft)}
+.months button.on b{color:var(--accent)}
+@media (max-width:700px){.months{grid-template-columns:repeat(4,1fr)}}
+.rangeval{display:flex;align-items:center;gap:8px}
+.rangeval input{flex:1;accent-color:var(--accent)}
+.rangeval span{min-width:52px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.scenfoot{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.scenfoot .summary{flex:1;min-width:240px;font-size:13px;color:var(--muted)}
+details.scenario > summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px}
+details.scenario > summary::-webkit-details-marker{display:none}
+details.scenario > summary .chev{margin-left:auto;transition:transform .2s;color:var(--muted)}
+details.scenario[open] > summary .chev{transform:rotate(180deg)}
+/* ---------- timeline */
+.timeline{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
+.tl{flex:1;min-width:300px;position:relative;cursor:pointer}
+.tl svg{display:block;width:100%;height:46px}
+.tltip{position:absolute;top:-28px;transform:translateX(-50%);background:var(--ink);color:var(--panel);font-size:11.5px;padding:2px 7px;border-radius:6px;pointer-events:none;white-space:nowrap}
+/* ---------- KPIs */
+.kpis{display:grid;grid-template-columns:1.3fr repeat(5,1fr);gap:0}
+.kpi{padding:2px 16px;border-left:1px solid var(--line)}
+.kpi:first-child{border-left:0;padding-left:0}
+.kpi small{display:block;font-size:12px;color:var(--muted)}
+.kpi b{display:block;font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px}
+.kpi.hero b{font-size:34px;color:var(--accent)}
+.kpi em{font-style:normal;font-size:12px;color:var(--muted)}
+@media (max-width:960px){.kpis{grid-template-columns:1fr 1fr}.kpi{border-left:0;padding:8px 0}}
+/* ---------- rooms */
+.room.duet{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset,var(--shadow)}
+.rhead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.rtitle{font-weight:700;font-size:15px}
+.big{font-size:46px;font-weight:750;font-variant-numeric:tabular-nums;line-height:1;margin:14px 0 4px;letter-spacing:-1px}
+.big small{font-size:18px;font-weight:600;color:var(--muted);letter-spacing:0}
+.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 14px;margin-top:14px}
+.kv small{display:block;color:var(--muted);font-size:12px}
+.kv b{font-size:18px;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:650;background:var(--panel2);border:1px solid var(--line);white-space:nowrap}
+.pill.ok{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.pill.warm{background:var(--warm-soft);color:var(--warm);border-color:transparent}
+.pill.cool{background:var(--cool-soft);color:var(--cool);border-color:transparent}
+.pill.bad{background:var(--bad-soft);color:var(--bad);border-color:transparent}
+.pill.amber{background:var(--amber-soft);color:var(--amber);border-color:transparent}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.fanicon{width:22px;height:22px;vertical-align:-4px;margin-left:4px;color:var(--muted)}
+.fanicon g{transform-origin:12px 12px;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.banner{display:flex;flex-wrap:wrap;gap:18px 32px;align-items:center}
-.banner .stat b{font-size:26px;font-variant-numeric:tabular-nums}
-.banner .stat.hero b{color:var(--accent);font-size:32px}
+.empty{margin-top:14px;padding:12px;border-radius:10px;background:var(--panel2);color:var(--muted);font-size:13px}
+/* ---------- controls */
+.ctl h3{margin:14px 0 8px;font-size:12px;color:var(--muted);font-weight:650;text-transform:uppercase;letter-spacing:.5px}
+.ctl h3:first-of-type{margin-top:10px}
+.ctl .row{display:flex;flex-wrap:wrap;gap:8px}
+.fbtn{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:1px}
+.fbtn small{font-size:11px;color:var(--muted)}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:9px 16px;border-radius:10px;font-size:13px;z-index:50;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+/* ---------- charts */
+.chartwrap{position:relative}
 canvas{width:100%;display:block}
-.controls h3{margin:14px 0 8px;font-size:13px;color:var(--muted);font-weight:600}
-.controls .row{display:flex;flex-wrap:wrap;gap:8px}
-.log{max-height:300px;overflow:auto;font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
-.log div{padding:3px 0;border-bottom:1px dashed var(--line)}
-.log .tag{display:inline-block;min-width:74px;color:var(--muted)}
-.log .tag.governor{color:var(--warm)} .log .tag.ac{color:var(--accent)} .log .tag.fault,.log .tag.ir{color:var(--bad)} .log .tag.inject{color:var(--bad);font-weight:700}
-.legend{display:flex;gap:16px;font-size:12px;color:var(--muted);margin:4px 0 8px}
-.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
-select,input[type=number]{font:inherit;padding:5px 7px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--ink)}
-.badge{font-size:12px;font-weight:600;padding:2px 8px;border-radius:6px;border:1px solid var(--line)}
-.badge.auto{border-color:var(--accent);color:var(--accent)} .badge.safe{border-color:var(--bad);color:var(--bad)} .badge.user_hold{border-color:var(--warm);color:var(--warm)}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:12px;color:var(--muted);margin:8px 0}
+.legend i{display:inline-block;width:16px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+.tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12px;box-shadow:0 6px 24px rgba(0,0,0,.12);min-width:170px;z-index:5}
+.tip b{display:block;margin-bottom:4px}
+.tip .r{display:flex;justify-content:space-between;gap:12px}
+.ctitle{font-size:12px;color:var(--muted);font-weight:600;margin:10px 0 2px}
+/* ---------- log */
+.logbar{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.logbar button{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:3px 10px;font-size:12px;cursor:pointer}
+.logbar button.on{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.log{max-height:340px;overflow:auto;font:12.5px/1.55 var(--mono)}
+.log div{padding:4px 2px;border-bottom:1px dashed var(--line);display:grid;grid-template-columns:96px 78px 1fr;gap:8px}
+.tag{font-weight:600;color:var(--muted)}
+.tag.ac{color:var(--accent)} .tag.governor{color:var(--amber)} .tag.ir,.tag.fault{color:var(--bad)}
+.tag.remote,.tag.user{color:var(--cool)} .tag.inject{color:var(--bad)} .tag.learn{color:var(--accent)}
+/* ---------- connect tab */
+.flow svg{width:100%;height:auto;display:block}
+.node rect{fill:var(--panel2);stroke:var(--line);stroke-width:1.5}
+.node.fw rect{stroke:var(--accent);stroke-width:2}
+.node text{fill:var(--ink)} .node .t{font-weight:700;font-size:15px} .node .s{fill:var(--muted);font-size:12px} .node .v{font-size:13px;font-family:var(--mono)}
+.edge path{fill:none;stroke:var(--faint);stroke-width:2}
+.edge.flowing path{stroke:var(--accent);stroke-dasharray:6 6;animation:dash 1s linear infinite}
+.edge.hot path{stroke:var(--warm);stroke-width:3.5}
+.edge.blocked path{stroke:var(--bad);stroke-dasharray:3 5}
+.edge text{fill:var(--muted);font-size:11.5px}
+@keyframes dash{to{stroke-dashoffset:-12}}
+.steps{counter-reset:s;list-style:none;padding:0;margin:12px 0 0;display:grid;gap:10px}
+.steps li{counter-increment:s;display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:start}
+.steps li::before{content:counter(s);width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:700;font-size:13px}
+.steps code,.mono{font-family:var(--mono);font-size:12.5px;background:var(--panel2);padding:1px 5px;border-radius:5px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:650}
+td.n{font-variant-numeric:tabular-nums;text-align:right} th.n{text-align:right}
+.figs{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.figs img{width:100%;border-radius:10px;border:1px solid var(--line);background:#fff}
+@media (max-width:960px){.figs{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <header>
-  <div class="brand">Duet <span>·</span> engineer console</div>
-  <div class="clock" id="clock">—</div>
-  <div class="muted" id="outside">—</div>
-  <div class="seg" id="speeds">
-    <button data-s="60">60×</button><button data-s="600" class="on">600×</button><button data-s="1800">1800×</button><button data-s="3600">3600×</button>
+  <div class="hbar">
+    <div class="brand"><span class="logo">D</span>Duet <span class="muted" style="font-weight:500">console</span></div>
+    <span class="conn" id="conn"><span class="dot"></span><span id="connText">Connecting…</span></span>
+    <div class="clock"><b id="clock">—</b><small id="outside">—</small></div>
+    <button class="btn icon" id="play" title="Play / pause (space)">❚❚</button>
+    <div class="seg" id="speeds"></div>
+    <nav class="tabs" id="tabs">
+      <button data-tab="live" class="on">Live</button>
+      <button data-tab="connect">How it connects</button>
+      <button data-tab="results">Results</button>
+      <button data-tab="guide">Guide</button>
+    </nav>
   </div>
-  <button class="btn" id="pause">Pause</button>
-  <div class="muted" id="fw" style="margin-left:auto;font-size:12px"></div>
 </header>
+<div class="notice" id="notice"></div>
 
 <main>
-  <section class="card banner">
-    <div class="stat hero"><small class="muted">AC energy saved tonight</small><br><b id="sav">—</b></div>
-    <div class="stat"><small class="muted">Normal room AC</small><br><b id="kb">—</b></div>
-    <div class="stat"><small class="muted">Duet room AC + fan</small><br><b id="kd">—</b></div>
-    <div class="stat"><small class="muted">Comfortable (|PMV| ≤ 0.5)</small><br><b id="cmf">—</b></div>
-    <div class="stat"><small class="muted">Safety rule breaches</small><br><b id="viol">—</b></div>
-  </section>
+<!-- =============================================================== LIVE -->
+<section data-pane="live" style="display:grid;gap:14px">
+  <details class="card scenario" id="scenario">
+    <summary><h2>Scenario</h2><span class="muted" id="scenSummary" style="font-size:13px"></span><span class="chev">▾</span></summary>
+    <div class="scen">
+      <div class="f wide"><label>Month (Jaipur climate normals: daily max / min)</label><div class="months" id="months"></div></div>
+      <div class="f"><label for="sDay">Start date</label><div style="display:flex;gap:8px;align-items:center"><input type="number" id="sDay" min="1" max="28" value="10" style="width:76px"><span class="muted" id="sDayLabel"></span></div></div>
+      <div class="f"><label for="sNights">Nights to simulate</label><select id="sNights"></select></div>
+      <div class="f"><label for="sView">Open the view at</label><select id="sView"></select></div>
+      <div class="f"><label for="sWeather">Weather source</label><select id="sWeather"></select></div>
+      <div class="f third"><label>Heatwave offset</label><div class="rangeval"><input type="range" id="sHeat" min="-3" max="5" step="0.5" value="0"><span id="sHeatV"></span></div></div>
+      <div class="f third"><label>IR frames lost (link quality)</label><div class="rangeval"><input type="range" id="sIr" min="0" max="0.3" step="0.01" value="0.05"><span id="sIrV"></span></div></div>
+      <div class="f third"><label>Remote presses Duet hears</label><div class="rangeval"><input type="range" id="sCap" min="0.5" max="1" step="0.01" value="0.97"><span id="sCapV"></span></div></div>
+      <div class="f"><label for="sBase">Compare against</label><select id="sBase"></select></div>
+      <div class="f"><label>Duet version</label><div class="seg" id="sDevice"><button data-v="native">Native (in fan)</button><button data-v="clip">Clip (retrofit)</button></div></div>
+      <div class="f two"><label>People</label><div class="seg" id="sPeople"><button data-v="1">1</button><button data-v="2">2</button></div></div>
+      <div class="f"><label for="sSeed">Random seed</label><div style="display:flex;gap:6px"><input type="number" id="sSeed" min="0" value="3" style="width:90px"><button class="btn icon" id="dice" title="New random seed">⚄</button></div></div>
+    </div>
+    <div class="scenfoot">
+      <div class="summary" id="scenPreview"></div>
+      <button class="btn" id="scenReset">Reset fields</button>
+      <button class="btn primary" id="apply">Apply and restart</button>
+    </div>
+  </details>
 
-  <section class="grid2">
-    <div class="card room" id="room-base"></div>
-    <div class="card room duet" id="room-duet"></div>
-  </section>
+  <div class="card">
+    <div class="timeline">
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn" data-hour="21">21:00</button><button class="btn" data-hour="0">Midnight</button>
+        <button class="btn" data-hour="3">03:00</button><button class="btn" data-hour="6">06:00</button>
+      </div>
+      <div class="tl" id="tl"><svg id="tlsvg" preserveAspectRatio="none"></svg><div class="tltip" id="tltip" hidden></div></div>
+    </div>
+    <div class="faint" style="font-size:12px;margin-top:4px">Click anywhere on the timeline to jump there. Shaded = occupant at home; dark = asleep. Jumping back replays the run exactly (same seed).</div>
+  </div>
 
-  <section class="grid3">
+  <div class="card">
+    <div class="kpis">
+      <div class="kpi hero"><small>AC energy Duet saved tonight</small><b id="kSave">—</b><em id="kRun"></em></div>
+      <div class="kpi"><small>Normal room AC tonight</small><b id="kBase">—</b></div>
+      <div class="kpi"><small>Duet room AC + fan</small><b id="kDuet">—</b></div>
+      <div class="kpi"><small>Comfortable time tonight</small><b id="kCmf">—</b><em>Duet vs normal</em></div>
+      <div class="kpi"><small>Times user grabbed the remote</small><b id="kPress">—</b><em>Duet vs normal, whole run</em></div>
+      <div class="kpi"><small>Safety rule breaches</small><b id="kViol">—</b><em>checked independently</em></div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card room" id="roomBase"></div>
+    <div class="card room duet" id="roomDuet"></div>
+  </div>
+
+  <div class="g3">
     <div class="card">
       <h2>Comfort map</h2>
-      <div class="muted" style="font-size:12px">ASHRAE 55 PMV at the room's humidity: temperature at the bed vs fan step. Green band = comfortable. Duet moves along it; the normal room sits left of it.</div>
+      <div class="sub">Every cell is an ASHRAE 55 comfort score for a bed temperature (across) and fan step (up) at the room's current humidity. Green is comfortable. Duet keeps its dot in the green while sliding right (warmer room, smaller AC bill); the normal room sits to the left.</div>
       <canvas id="map" height="300"></canvas>
     </div>
-    <div class="card controls">
-      <h2>Inject a fault</h2>
+    <div class="card ctl">
+      <h2>Try to break it</h2>
+      <div class="sub">Each button changes the Duet room (and the normal room where it applies). Watch the firmware log and the "How it connects" tab react.</div>
+      <h3>Inject a fault</h3>
+      <div class="row" id="faults"></div>
+      <h3>Press the user's own AC remote (always wins)</h3>
       <div class="row">
-        <button class="btn" data-f="sensor_stuck">Sensor frozen 30 min</button>
-        <button class="btn" data-f="sensor_crc">Sensor CRC errors</button>
-        <button class="btn" data-f="ir_burst">IR blocked 40 min</button>
-        <button class="btn" data-f="humidity_spike">Humidity spike</button>
-        <button class="btn" data-f="radar_absent">Radar dropout</button>
+        <button class="btn" data-r="22">Set AC 22 °C</button><button class="btn" data-r="23">23 °C</button>
+        <button class="btn" data-r="25">25 °C</button><button class="btn" data-r="27">27 °C</button>
       </div>
-      <h3>The user's own remote (always wins)</h3>
-      <div class="row">
-        <button class="btn" data-r="23">Set AC 23 °C</button>
-        <button class="btn" data-r="25">Set AC 25 °C</button>
-        <button class="btn" data-r="27">Set AC 27 °C</button>
-      </div>
-      <h3>Preference (app slider)</h3>
-      <div class="row" style="align-items:center">
-        <span class="muted">Cooler</span>
-        <input type="range" id="pref" min="-0.3" max="0.3" step="0.1" value="0" style="flex:1">
-        <span class="muted">Saver</span>
-      </div>
-      <h3>Scenario</h3>
-      <div class="row" style="align-items:center">
-        <select id="weather"><option value="premonsoon_week">Pre-monsoon week (May)</option><option value="monsoon_week">Monsoon week (Aug)</option><option value="hottest_day">Hottest day</option></select>
-        <select id="baseline"><option value="b2">vs AC 24 °C + fan</option><option value="b1">vs AC 24 °C, no fan</option><option value="b3">vs AC 22 °C</option></select>
-        <input type="number" id="seed" value="3" min="0" style="width:70px">
-        <button class="btn" id="reset">Restart</button>
-      </div>
+      <h3>Comfort preference (the app slider)</h3>
+      <div class="rangeval"><span class="muted" style="min-width:auto">Cooler</span><input type="range" id="pref" min="-0.3" max="0.3" step="0.1" value="0"><span class="muted" style="min-width:auto">Saver</span><span id="prefV"></span></div>
     </div>
-  </section>
+  </div>
 
-  <section class="card">
+  <div class="card">
     <h2>Last 12 hours</h2>
-    <div class="legend"><span><i style="background:var(--base)"></i>Normal room</span><span><i style="background:var(--accent)"></i>Duet room</span><span><i style="background:var(--accent);height:1px;border-top:1px dashed var(--accent)"></i>AC setpoint</span></div>
-    <canvas id="c-temp" height="190"></canvas>
-    <canvas id="c-pmv" height="150"></canvas>
-    <canvas id="c-pow" height="150"></canvas>
-  </section>
+    <div class="legend"><span><i style="background:var(--base)"></i>Normal room</span><span><i style="background:var(--accent)"></i>Duet room</span><span><i style="background:var(--faint);height:2px"></i>Outside (top chart)</span><span>Dashed = AC setpoint</span><span>Hover a chart to read values</span></div>
+    <div class="ctitle">Temperature at the bed, °C</div><div class="chartwrap"><canvas id="cTemp" height="200"></canvas></div>
+    <div class="ctitle">Comfort (PMV): green band = comfortable</div><div class="chartwrap"><canvas id="cPmv" height="150"></canvas></div>
+    <div class="ctitle">AC electrical power, W</div><div class="chartwrap"><canvas id="cPow" height="150"></canvas></div>
+    <div class="ctitle">Fan step</div><div class="chartwrap"><canvas id="cFan" height="90"></canvas></div>
+    <div class="tip" id="tip" hidden></div>
+  </div>
 
-  <section class="card">
+  <div class="card">
     <h2>Duet firmware log</h2>
+    <div class="sub">Printed by the real C++ firmware as it decides. Newest first.</div>
+    <div class="logbar" id="logbar"></div>
     <div class="log" id="log"></div>
-  </section>
+  </div>
+</section>
+
+<!-- =============================================================== CONNECT -->
+<section data-pane="connect" hidden style="display:grid;gap:14px">
+  <div class="card flow">
+    <h2>How the pieces connect, live</h2>
+    <div class="sub">Every box is a real piece of the prototype; the values update as the simulation runs. Green moving lines carry data all the time; orange flashes are commands being sent.</div>
+    <svg id="flow" viewBox="0 0 1190 600" role="img" aria-label="Duet data flow"></svg>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <h2>What happens every 5 simulated seconds</h2>
+      <ol class="steps" id="loopSteps"></ol>
+    </div>
+    <div class="card">
+      <h2>Where each box lives in the code</h2>
+      <table>
+        <tr><th>Box</th><th>File</th><th>Real hardware</th></tr>
+        <tr><td>Weather, Room, AC, Fan</td><td class="mono">twin/duet_twin/plant.py, weather.py</td><td>the real bedroom</td></tr>
+        <tr><td>Sensor pod</td><td class="mono">plant.py (Sht40) → sil_api.cpp</td><td>SHT40 on I2C 0x44, LD2410C on UART</td></tr>
+        <tr><td>Duet firmware</td><td class="mono">firmware/src/core/controller.cpp</td><td>same file on the ESP32-C3</td></tr>
+        <tr><td>Safety governor</td><td class="mono">firmware/src/core/governor.cpp</td><td>same file on the ESP32-C3</td></tr>
+        <tr><td>Bridge Python ↔ C++</td><td class="mono">twin/duet_twin/sil.py (ctypes)</td><td>replaced by real drivers: firmware/src/esp32/</td></tr>
+        <tr><td>IR LED → AC</td><td class="mono">plant.py (IrChannel)</td><td>940 nm LED, 38 kHz, IRremoteESP8266</td></tr>
+        <tr><td>This page</td><td class="mono">console/server.py, engine.py, index.html</td><td>the Duet phone app (later)</td></tr>
+      </table>
+      <p class="muted" style="font-size:12.5px;margin:12px 0 0">The firmware box is the only part that ships on the device. Everything else in the simulation stands in for the physical world so the firmware can be tested without hardware.</p>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================================== RESULTS -->
+<section data-pane="results" hidden style="display:grid;gap:14px">
+  <div class="card"><h2>1 · The room model agrees with measured data</h2><div class="sub">Checked before any Duet result is trusted (experiments/calibrate.py).</div><div id="rCal" style="margin-top:10px"></div></div>
+  <div class="card"><h2>2 · Duet vs normal rooms, 30 paired runs per row</h2><div class="sub">AC energy saved by Duet (median, 5th–95th percentile) and comfort (share of occupied time with |PMV| ≤ 0.5). Source: experiments/run_matrix.py.</div><div id="rSum" style="margin-top:10px;overflow:auto"></div></div>
+  <div class="card"><h2>3 · Fault injection</h2><div class="sub">Each fault is injected into the real firmware with a pass rule written in advance (experiments/faults.py).</div><div id="rFaults" style="margin-top:10px;overflow:auto"></div></div>
+  <div class="card"><h2>Figures for the report</h2><div class="figs" id="rFigs"></div></div>
+</section>
+
+<!-- =============================================================== GUIDE -->
+<section data-pane="guide" hidden style="display:grid;gap:14px">
+  <div class="card">
+    <h2>Using the console</h2>
+    <ol class="steps">
+      <li><div><b>Pick a scenario.</b> Open "Scenario", choose a month (May is hot and dry, August is humid), a start date and how many nights, then <i>Apply and restart</i>.</div></li>
+      <li><div><b>Control time.</b> ▶/❚❚ (or the space bar) plays and pauses; 600× means one simulated hour passes in six seconds. Click the timeline, or the 21:00 / Midnight / 03:00 / 06:00 buttons, to jump.</div></li>
+      <li><div><b>Compare the two rooms.</b> Left is a normal room, right is the same room with Duet. Same weather, same person, same random luck. The top row shows tonight's AC energy and comfort.</div></li>
+      <li><div><b>Try to break it.</b> Inject a fault or press the user's remote, then read the firmware log: Duet should step back, never fight the user, and never break a safety rule.</div></li>
+      <li><div><b>See the connections.</b> The "How it connects" tab draws the whole loop with live values.</div></li>
+    </ol>
+  </div>
+  <div class="card">
+    <h2>Words used here</h2>
+    <table>
+      <tr><td><b>PMV</b></td><td>Predicted Mean Vote: ASHRAE 55's comfort score. 0 is neutral, +1 slightly warm, −1 slightly cool. Between −0.5 and +0.5 counts as comfortable.</td></tr>
+      <tr><td><b>Setpoint</b></td><td>The temperature the AC is told to hold. Every degree higher saves roughly a tenth of the AC's energy.</td></tr>
+      <tr><td><b>Safety governor</b></td><td>The one function every AC command must pass: 24–28 °C, 1 °C per 20 min, 3 changes an hour, no raise above 60% humidity, nothing if the sensor is faulty, and the user's remote always wins.</td></tr>
+      <tr><td><b>SIL</b></td><td>Software in the loop: the firmware's own C++ code, compiled for this computer instead of the chip, driven by a simulated room.</td></tr>
+      <tr><td><b>Seed</b></td><td>Fixes the random luck (weather wobble, arrival time, sensor noise). Same seed, same run: that is how the two rooms get identical conditions.</td></tr>
+    </table>
+  </div>
+</section>
 </main>
+<div class="toast" id="toast"></div>
 
 <script>
+"use strict";
 const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
-let comfort = null, state = null, hist = {base: [], duet: []}, start = null;
-let ws;
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const DAY = 86400, YEAR = 2026;
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
-fetch('/api/comfort').then(r => r.json()).then(j => { comfort = j; drawMap(); });
+let info = null, comfort = null, S = null;           // server info, comfort tables, last snapshot
+let hist = {base: [], duet: []}, cursor = {since: -1, ev: 0, gen: -1};
+let logRows = [], logFilter = 'all', online = false, failCount = 0, form = null;
+let lastIrT = null, lastFanT = null, hotUntil = {ir: 0, gov: 0, fan: 0};
 
-function connect() {
-  ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws');
-  ws.onmessage = e => {
-    const m = JSON.parse(e.data);
-    if (m.type === 'full') {
-      hist = {base: m.hist_base, duet: m.hist_duet};
-      start = {base: m.base.ac_kwh + m.base.fan_kwh, baseac: m.base.ac_kwh, duet: m.duet.ac_kwh + m.duet.fan_kwh, duetac: m.duet.ac_kwh,
-               t: m.t, inb: {base: [0, 0], duet: [0, 0]}};
-      $('#log').innerHTML = '';
-    } else {
-      hist.base.push(...m.hist_base); hist.duet.push(...m.hist_duet);
-      for (const k of ['base', 'duet']) for (const r of (k === 'base' ? m.hist_base : m.hist_duet))
-        if (r[5] !== null) { start.inb[k][1]++; if (Math.abs(r[5]) <= 0.5) start.inb[k][0]++; }
-      const cut = m.t - 12 * 3600;
-      for (const k of ['base', 'duet']) { let i = 0; while (i < hist[k].length && hist[k][i][0] < cut) i++; if (i) hist[k].splice(0, i); }
-    }
-    state = m;
-    render(m);
-  };
-  ws.onclose = () => setTimeout(connect, 1000);
+// ------------------------------------------------------------------ helpers
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2600); }
+function dateOf(t) {
+  if (!S) return null;
+  const c = S.calendar;
+  return new Date(YEAR, c.month - 1, c.start_day + Math.floor(t / DAY));
 }
-connect();
-const send = o => ws && ws.readyState === 1 && ws.send(JSON.stringify(o));
+function hhmm(t) { const s = ((t % DAY) + DAY) % DAY; return `${String(Math.floor(s / 3600)).padStart(2, '0')}:${String(Math.floor(s % 3600 / 60)).padStart(2, '0')}`; }
+function stamp(t, long) { const d = dateOf(t); if (!d) return hhmm(t); return long ? `${WD[d.getDay()]} ${d.getDate()} ${MON[d.getMonth()]} · ${hhmm(t)}` : `${d.getDate()} ${MON[d.getMonth()]} ${hhmm(t)}`; }
+function kwh(v) { return v == null ? '—' : `${v.toFixed(2)} kWh`; }
+function pct(v) { return v == null ? '—' : `${Math.round(v * 100)}%`; }
+async function cmd(o) {
+  try {
+    const r = await fetch('/api/cmd', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(o)});
+    const j = await r.json();
+    if (!j.ok) toast(j.error || 'Command refused');
+    return j;
+  } catch (e) { toast('Server not reachable'); return {ok: false}; }
+}
 
-document.querySelectorAll('#speeds button').forEach(b => b.onclick = () => {
-  document.querySelectorAll('#speeds button').forEach(x => x.classList.remove('on')); b.classList.add('on');
-  send({cmd: 'speed', value: +b.dataset.s});
-});
-$('#pause').onclick = () => send({cmd: 'pause'});
-document.querySelectorAll('[data-f]').forEach(b => b.onclick = () => send({cmd: 'fault', name: b.dataset.f}));
-document.querySelectorAll('[data-r]').forEach(b => b.onclick = () => send({cmd: 'remote', setpoint: +b.dataset.r}));
-$('#pref').onchange = e => send({cmd: 'preference', value: +e.target.value});
-$('#reset').onclick = () => send({cmd: 'reset', weather: $('#weather').value, seed: +$('#seed').value, baseline: $('#baseline').value});
+// ------------------------------------------------------------------ polling (plain HTTP, ~4 per second)
+async function poll() {
+  const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 5000);
+  try {
+    const r = await fetch(`/api/state?since=${cursor.since}&ev=${cursor.ev}&gen=${cursor.gen}`, {signal: ctl.signal, cache: 'no-store'});
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const m = await r.json();
+    ingest(m); setConn(true); failCount = 0;
+  } catch (e) { failCount++; setConn(false, failCount); }
+  finally { clearTimeout(to); setTimeout(poll, online ? 250 : Math.min(3000, 500 * failCount)); }
+}
+function setConn(ok, n) {
+  online = ok;
+  const c = $('#conn');
+  c.className = 'conn ' + (ok ? 'live' : 'off');
+  $('#connText').textContent = ok ? (S && S.paused ? 'Live · paused' : 'Live') : (n > 2 ? 'Server offline — is run.py still running?' : 'Reconnecting…');
+}
+function ingest(m) {
+  if (m.fresh) { hist = {base: [], duet: []}; logRows = []; $('#log').innerHTML = ''; }
+  hist.base.push(...m.hist_base); hist.duet.push(...m.hist_duet);
+  const cut = m.t - 12 * 3600;
+  for (const k of ['base', 'duet']) { let i = 0; while (i < hist[k].length && hist[k][i][0] < cut) i++; if (i) hist[k].splice(0, i); }
+  const last = hist.duet.length ? hist.duet[hist.duet.length - 1][0] : -1;
+  cursor = {since: last, ev: m.ev_next, gen: m.gen};
+  const firstLoad = !S || m.fresh;
+  S = m;
+  for (const e of m.events) logRows.unshift(e);
+  if (logRows.length > 400) logRows.length = 400;
+  if (firstLoad) loadForm(m.settings);
+  render(m);
+}
 
-function hhmm(t) { const d = Math.floor(t / 86400), s = t % 86400; const h = Math.floor(s / 3600), mi = Math.floor(s % 3600 / 60);
-  return `Day ${d} · ${String(h).padStart(2, '0')}:${String(mi).padStart(2, '0')}`; }
-function comfortPill(p) {
-  if (p === null || p === undefined) return '<span class="pill">room empty</span>';
+// ------------------------------------------------------------------ header + notices
+function renderHeader(m) {
+  $('#clock').textContent = stamp(m.t, true);
+  $('#outside').textContent = `Outside ${m.weather.t_out} °C · ${m.weather.rh_out}% RH${m.weather.sun > 50 ? ' · sun' : ''}`;
+  $('#play').textContent = m.paused ? '▶' : '❚❚';
+  $$('#speeds button').forEach(b => b.classList.toggle('on', +b.dataset.s === m.speed));
+  const n = [];
+  if (m.error) n.push(`<div class="err">Simulation stopped: ${esc(m.error)}</div>`);
+  if (m.job) n.push(`<div class="info">${esc(m.job.label)}… ${Math.round(m.job.progress * 100)}%<div class="progress"><i style="width:${Math.round(m.job.progress * 100)}%"></i></div></div>`);
+  else if (m.notice) n.push(`<div class="info">${esc(m.notice)}</div>`);
+  $('#notice').innerHTML = n.join('');
+}
+
+// ------------------------------------------------------------------ scenario form
+function buildForm() {
+  const months = $('#months');
+  months.innerHTML = Object.entries(info.months).map(([k, v]) =>
+    `<button data-m="${k}" title="${esc(v.name)}: morning RH ${v.rh_am}%, afternoon ${v.rh_pm}%"><b>${esc(v.name.slice(0, 3))}</b><small>${Math.round(v.max)}° / ${Math.round(v.min)}°</small></button>`).join('');
+  months.onclick = e => { const b = e.target.closest('button'); if (!b) return; form.month = +b.dataset.m; syncForm(); };
+  $('#sNights').innerHTML = [1, 2, 3, 4, 5, 6, 7].map(n => `<option value="${n}">${n} night${n > 1 ? 's' : ''}</option>`).join('');
+  const views = []; for (let h = 18; h <= 26; h += 0.5) views.push(h % 24);
+  $('#sView').innerHTML = views.map(h => `<option value="${h}">${hhmm(h * 3600)}${h < 12 ? ' (next morning)' : ''}</option>`).join('');
+  $('#sBase').innerHTML = Object.entries(info.baselines).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('');
+  $('#sWeather').innerHTML = `<option value="">Jaipur synthetic (from monthly normals)</option>` + info.epw.map(f => `<option value="${esc(f)}">EPW file: ${esc(f)}</option>`).join('');
+  $('#faults').innerHTML = Object.entries(info.faults).map(([k, v]) => {
+    const [main, extra] = v.split(' (');
+    return `<button class="btn fbtn" data-f="${k}"><span>${esc(main)}</span><small>${extra ? esc(extra.replace(')', '')) : ''}</small></button>`; }).join('');
+  $('#speeds').innerHTML = info.speeds.map(s => `<button data-s="${s}" title="1 simulated hour in ${s >= 3600 ? '1 s' : Math.round(3600 / s) + ' s'}">${s === 1 ? 'Real time' : s + '×'}</button>`).join('');
+  const bind = (id, key, conv) => $(id).addEventListener('input', e => { form[key] = conv(e.target.value); syncForm(); });
+  bind('#sDay', 'start_day', v => Math.max(1, Math.min(28, +v || 1))); bind('#sNights', 'nights', Number);
+  bind('#sView', 'view_from', Number); bind('#sBase', 'baseline', String); bind('#sWeather', 'epw', String);
+  bind('#sHeat', 'heat', Number); bind('#sIr', 'ir_loss', Number); bind('#sCap', 'remote_capture', Number);
+  bind('#sSeed', 'seed', v => Math.max(0, +v || 0));
+  $('#sDevice').onclick = e => { const b = e.target.closest('button'); if (b) { form.device = b.dataset.v; syncForm(); } };
+  $('#sPeople').onclick = e => { const b = e.target.closest('button'); if (b) { form.occupants = +b.dataset.v; syncForm(); } };
+  $('#dice').onclick = () => { form.seed = Math.floor(Math.random() * 1000); syncForm(); };
+  $('#scenReset').onclick = () => loadForm(S.settings);
+  $('#apply').onclick = async () => {
+    $('#apply').disabled = true;
+    const r = await cmd({cmd: 'configure', settings: form});
+    $('#apply').disabled = false;
+    if (r.ok) { toast(`Loading ${info.months[form.month].name} scenario…`); $('#scenario').open = false; }
+  };
+}
+function loadForm(s) { form = {...s}; syncForm(); }
+function syncForm() {
+  if (!form || !info) return;
+  $$('#months button').forEach(b => b.classList.toggle('on', +b.dataset.m === form.month));
+  $('#sDay').value = form.start_day; $('#sNights').value = form.nights; $('#sView').value = form.view_from;
+  $('#sBase').value = form.baseline; $('#sWeather').value = form.epw; $('#sSeed').value = form.seed;
+  $('#sHeat').value = form.heat; $('#sHeatV').textContent = (form.heat > 0 ? '+' : '') + form.heat + ' °C';
+  $('#sIr').value = form.ir_loss; $('#sIrV').textContent = Math.round(form.ir_loss * 100) + '%';
+  $('#sCap').value = form.remote_capture; $('#sCapV').textContent = Math.round(form.remote_capture * 100) + '%';
+  $$('#sDevice button').forEach(b => b.classList.toggle('on', b.dataset.v === form.device));
+  $$('#sPeople button').forEach(b => b.classList.toggle('on', +b.dataset.v === form.occupants));
+  const m = info.months[form.month];
+  const d0 = new Date(YEAR, form.month - 1, form.start_day + 1), d1 = new Date(YEAR, form.month - 1, form.start_day + form.nights + 1);
+  $('#sDayLabel').textContent = `${MON[form.month - 1]} ${YEAR}`;
+  $('#scenPreview').innerHTML = `<b>${WD[d0.getDay()]} ${d0.getDate()} ${MON[d0.getMonth()]}</b> evening to <b>${WD[d1.getDay()]} ${d1.getDate()} ${MON[d1.getMonth()]}</b> morning · ${esc(m.name)} days around ${Math.round(m.max + form.heat)} °C, nights ${Math.round(m.min + form.heat)} °C · ${form.occupants} ${form.occupants > 1 ? 'people' : 'person'} · seed ${form.seed}. The day before is simulated too so the walls start at a realistic temperature.`;
+  const changed = S && JSON.stringify(form) !== JSON.stringify(S.settings);
+  $('#apply').textContent = changed ? 'Apply and restart' : 'Restart';
+}
+function renderScenSummary(m) {
+  const s = m.settings;
+  const d0 = new Date(YEAR, s.month - 1, s.start_day + 1);
+  $('#scenSummary').textContent = `${info.months[s.month].name} · from ${d0.getDate()} ${MON[d0.getMonth()]} · ${s.nights} night${s.nights > 1 ? 's' : ''} · vs ${m.baseline.label} · Duet ${s.device === 'clip' ? 'Clip' : 'Native'} · seed ${s.seed}${s.epw ? ' · ' + s.epw : ''}`;
+}
+
+// ------------------------------------------------------------------ timeline
+function renderTimeline(m) {
+  const svg = $('#tlsvg'), w = svg.clientWidth || 800, h = 46;
+  svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  const X = t => t / m.end * w;
+  let out = `<rect x="0" y="12" width="${w}" height="20" rx="6" fill="${css('--panel2')}" stroke="${css('--line')}"/>`;
+  for (const [a, sl, wk, lv] of m.nights) {
+    out += `<rect x="${X(a)}" y="12" width="${X(lv) - X(a)}" height="20" fill="${css('--accent-soft')}"/>`;
+    out += `<rect x="${X(sl)}" y="12" width="${X(wk) - X(sl)}" height="20" fill="${css('--accent')}" opacity=".28"/>`;
+  }
+  for (let d = 0; d <= m.end / DAY; d++) {
+    const x = X(d * DAY);
+    out += `<line x1="${x}" x2="${x}" y1="8" y2="36" stroke="${css('--line')}"/>`;
+    const dt = dateOf(d * DAY + 43200);
+    if (d < m.end / DAY) out += `<text x="${x + 4}" y="44" font-size="10.5" fill="${css('--muted')}">${dt.getDate()} ${MON[dt.getMonth()]}${d === 0 ? ' (warm-up)' : ''}</text>`;
+  }
+  const xn = X(m.t);
+  out += `<rect x="0" y="12" width="${xn}" height="20" fill="${css('--ink')}" opacity=".06"/>`;
+  out += `<line x1="${xn}" x2="${xn}" y1="4" y2="38" stroke="${css('--accent')}" stroke-width="2.5"/><circle cx="${xn}" cy="5" r="4" fill="${css('--accent')}"/>`;
+  svg.innerHTML = out;
+}
+function tlTime(ev) { const r = $('#tl').getBoundingClientRect(); return Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width)) * S.end; }
+
+// ------------------------------------------------------------------ KPIs
+function renderKpis(m) {
+  const tb = m.tonight.base, td = m.tonight.duet, rb = m.run.base, rd = m.run.duet;
+  const sav = tb.ac_kwh > 0.05 ? 1 - td.ac_kwh / tb.ac_kwh : null;
+  $('#kSave').textContent = sav == null ? '—' : `${Math.round(sav * 100)}%`;
+  const rs = rb.ac_kwh > 0.05 ? 1 - rd.ac_kwh / rb.ac_kwh : null;
+  $('#kRun').textContent = rs == null ? 'whole run: waiting for the AC to run' : `whole run so far: ${Math.round(rs * 100)}% (${(rb.ac_kwh - rd.ac_kwh).toFixed(2)} kWh)`;
+  $('#kBase').textContent = kwh(tb.ac_kwh);
+  $('#kDuet').textContent = kwh(td.ac_kwh != null ? td.ac_kwh + td.fan_kwh : null);
+  $('#kCmf').textContent = td.comfort == null ? '—' : `${pct(td.comfort)} vs ${pct(tb.comfort)}`;
+  $('#kPress').textContent = `${m.duet.presses} vs ${m.base.presses}`;
+  const v = m.duet.fw ? m.duet.fw.violations : 0;
+  $('#kViol').textContent = v; $('#kViol').style.color = v ? css('--bad') : '';
+}
+
+// ------------------------------------------------------------------ room cards
+function comfortPill(r) {
+  if (!r.present) return '<span class="pill">nobody home</span>';
+  const p = r.pmv; if (p == null) return '';
   const cls = Math.abs(p) <= 0.5 ? 'ok' : (p > 0 ? 'warm' : 'cool');
-  const word = Math.abs(p) <= 0.5 ? 'comfortable' : (p > 0 ? 'warm' : 'too cool');
+  const word = Math.abs(p) <= 0.5 ? 'comfortable' : (p > 0 ? (p > 1 ? 'too warm' : 'slightly warm') : (p < -1 ? 'too cold' : 'slightly cool'));
   return `<span class="pill ${cls}">${word} · PMV ${p > 0 ? '+' : ''}${p.toFixed(2)}</span>`;
 }
 function fanSvg(step) {
-  const dur = step ? (1.6 / step).toFixed(2) : 0;
-  return `<svg class="fanicon" viewBox="0 0 30 30" aria-hidden="true"><g style="animation-duration:${dur}s;${step ? '' : 'animation:none'}">` +
-    [0, 120, 240].map(a => `<ellipse cx="15" cy="7" rx="3.2" ry="7" fill="currentColor" opacity=".75" transform="rotate(${a} 15 15)"/>`).join('') +
-    `<circle cx="15" cy="15" r="3" fill="currentColor"/></g></svg>`;
+  const dur = step ? (1.4 / step).toFixed(2) : 0;
+  return `<svg class="fanicon" viewBox="0 0 24 24" aria-hidden="true"><g style="animation-duration:${dur}s;${step ? '' : 'animation:none'}">` +
+    [0, 120, 240].map(a => `<ellipse cx="12" cy="5.5" rx="2.6" ry="5.5" fill="currentColor" opacity=".8" transform="rotate(${a} 12 12)"/>`).join('') +
+    `<circle cx="12" cy="12" r="2.4" fill="currentColor"/></g></svg>`;
 }
+const VERDICT_TEXT = {approved: 'approved', out_of_range: 'refused: already at the 24–28 °C limit', step_too_large: 'refused: more than 1 °C at once',
+  too_soon: 'refused: less than 20 min since the last change', hourly_limit: 'refused: 3 changes this hour already',
+  humidity_block: 'refused: humidity above 60%', sensor_fault: 'refused: sensor not trusted', user_hold: 'refused: user is in charge',
+  ac_off: 'refused: AC is off', ac_unknown: 'refused: AC state unknown'};
+const verdictShort = v => !v ? 'no request yet' : v === 'approved' ? 'last: approved' : 'last: ' + (VERDICT_TEXT[v] || v).replace('refused: ', 'no, ');
+const MODE_TEXT = {auto: 'Auto: coordinating', user_hold: 'Standing back for the user', safe: 'Safe mode: sensor untrusted', vacant: 'Room empty', idle: 'AC is off'};
 function roomCard(r, title, sub, duet) {
+  const who = r.present ? (r.asleep ? `occupant asleep${r.blanket ? ' under a blanket' : ''}` : 'occupant awake') : 'room empty';
   let extra = '';
-  if (duet) extra = `<div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-     <span class="badge ${r.mode}">mode: ${r.mode.replace('_', ' ')}</span>
-     <span class="badge">target PMV ${r.target > 0 ? '+' : ''}${r.target}</span>
-     <span class="badge">sensor ${r.sensor_ok ? 'ok' : 'FAULT'} · ${r.t_sensor} °C</span>
-     <span class="badge">AC decisions ${r.commands} · IR frames ${r.frames} · resends ${r.resends}</span>
-     <span class="badge">last governor verdict: ${r.verdict.replace('_', ' ')}</span></div>`;
-  return `<div class="roomhead"><div><h2>${title}</h2><div class="muted" style="font-size:12px">${sub}</div></div>${comfortPill(r.pmv)}</div>
-   <div class="big">${r.t_air.toFixed(1)} °C</div><div class="muted">at the bed · RH ${r.rh}%${r.asleep ? ' · occupant asleep' : r.present ? ' · occupant awake' : ''}</div>
-   <div class="kv">
-     <div><small>AC setpoint</small><b>${r.ac_power ? r.ac_sp + ' °C' : 'off'}</b></div>
-     <div><small>Fan step</small><b>${r.fan_step}${fanSvg(r.fan_step)}</b></div>
-     <div><small>AC power now</small><b>${Math.round(r.ac_w)} W</b></div>
-     <div><small>Fan power</small><b>${r.fan_w} W</b></div>
-     <div><small>AC energy (run)</small><b>${r.ac_kwh.toFixed(2)} kWh</b></div>
-     <div><small>Remote presses</small><b>${r.presses}</b></div>
-   </div>${extra}`;
-}
-function render(m) {
-  $('#clock').textContent = hhmm(m.t) + (m.paused ? ' · paused' : '');
-  $('#outside').textContent = `Outside ${m.weather.t_out} °C, ${m.weather.rh_out}% · ${m.weather.label}`;
-  $('#fw').textContent = m.fw + ' · seed ' + m.seed;
-  $('#room-base').innerHTML = roomCard(m.base, 'Normal room', m.baseline.label, false);
-  $('#room-duet').innerHTML = roomCard(m.duet, 'Duet room', 'Duet coordinates AC and fan · real firmware (SIL)', true);
-  const db = m.base.ac_kwh - start.baseac, dd = m.duet.ac_kwh - start.duetac, ddt = m.duet.ac_kwh + m.duet.fan_kwh - start.duet;
-  $('#sav').textContent = db > 0.05 ? `${Math.round((1 - dd / db) * 100)}%` : '—';
-  $('#kb').textContent = `${db.toFixed(2)} kWh`;
-  $('#kd').textContent = `${ddt.toFixed(2)} kWh`;
-  const pc = k => start.inb[k][1] ? Math.round(100 * start.inb[k][0] / start.inb[k][1]) + '%' : '—';
-  $('#cmf').textContent = `${pc('duet')} vs ${pc('base')}`;
-  $('#viol').textContent = m.duet.violations;
-  const log = $('#log');
-  for (const [t, tag, msg] of m.events) {
-    const d = document.createElement('div');
-    d.innerHTML = `<span class="muted">${hhmm(t).slice(-5)}</span> <span class="tag ${tag}">${tag}</span> ${msg.replace(/</g, '&lt;')}`;
-    log.prepend(d);
+  if (duet && r.fw) {
+    const f = r.fw;
+    const mcls = f.mode === 'auto' ? 'ok' : f.mode === 'safe' ? 'bad' : f.mode === 'user_hold' ? 'amber' : '';
+    extra = `<div class="chips">
+      <span class="pill ${mcls}">${esc(MODE_TEXT[f.mode] || f.mode)}</span>
+      <span class="pill">${f.profile} comfort profile</span>
+      <span class="pill ${f.sensor_ok ? '' : 'bad'}">sensor ${f.sensor_ok ? 'OK' : 'FAULT'} · reads ${f.t_sensor} °C</span>
+      <span class="pill">Duet thinks AC is ${f.believed_sp} °C</span>
+      <span class="pill">${f.commands} AC decisions · ${f.frames} IR frames</span>
+      ${f.resends ? `<span class="pill amber">${f.resends} IR resends</span>` : ''}
+      ${f.inferred_user ? `<span class="pill amber">${f.inferred_user} unseen remote press inferred</span>` : ''}
+      <span ${(f.commands || Object.keys(f.rejected || {}).length) ? '' : 'hidden'} class="pill ${f.verdict === 'approved' ? 'ok' : 'amber'}" title="The last time Duet asked the safety governor to change the AC">governor: ${esc(VERDICT_TEXT[f.verdict] || f.verdict)}</span></div>`;
   }
-  while (log.children.length > 200) log.lastChild.remove();
-  drawMap(); drawCharts();
+  const body = `<div class="big">${r.t_air.toFixed(1)}<small> °C at the bed</small></div>
+    <div class="muted">RH ${r.rh}% · ${who}</div>
+    <div class="kv">
+      <div><small>AC setpoint</small><b>${r.ac_power ? r.ac_sp + ' °C' : 'off'}</b></div>
+      <div><small>Fan step</small><b>${r.fan_step}${fanSvg(r.fan_step)}</b></div>
+      <div><small>AC power now</small><b>${Math.round(r.ac_w)} W</b></div>
+      <div><small>Fan power</small><b>${r.fan_w} W</b></div>
+      <div><small>AC energy, whole run</small><b>${r.ac_kwh.toFixed(2)} kWh</b></div>
+      <div><small>Remote presses</small><b>${r.presses}</b></div>
+    </div>`;
+  return `<div class="rhead"><div><div class="rtitle">${title}</div><div class="muted" style="font-size:12.5px">${sub}</div></div>${comfortPill(r)}</div>${body}${extra}`;
 }
 
-// --------------------------------------------------------------- canvases
+// ------------------------------------------------------------------ canvases
 function setup(cv) {
   const r = devicePixelRatio || 1, w = cv.clientWidth, h = +cv.getAttribute('height');
-  if (cv.width !== w * r) { cv.width = w * r; cv.height = h * r; cv.style.height = h + 'px'; }
-  const g = cv.getContext('2d'); g.setTransform(r, 0, 0, r, 0, 0); g.clearRect(0, 0, w, h);
-  g.font = '11px system-ui'; return [g, w, h];
+  if (cv.width !== Math.round(w * r) || cv.height !== Math.round(h * r)) { cv.width = Math.round(w * r); cv.height = Math.round(h * r); cv.style.height = h + 'px'; }
+  const g = cv.getContext('2d'); g.setTransform(r, 0, 0, r, 0, 0); g.clearRect(0, 0, w, h); g.font = '11px Inter,system-ui,sans-serif';
+  return [g, w, h];
 }
 function pmvColor(p) {
   if (Math.abs(p) <= 0.5) return css('--accent-soft');
   const a = Math.min(1, (Math.abs(p) - 0.5) / 1.5);
-  return p > 0 ? `rgba(217,119,43,${0.12 + 0.55 * a})` : `rgba(63,127,198,${0.12 + 0.55 * a})`;
+  return p > 0 ? `rgba(201,106,30,${0.15 + 0.6 * a})` : `rgba(47,111,179,${0.15 + 0.6 * a})`;
 }
 function drawMap() {
-  if (!comfort || !state) return;
+  if (!comfort || !S) return;
   const [g, w, h] = setup($('#map'));
-  const prof = state.duet.asleep ? 'sleep' : 'evening';
+  const prof = S.duet.asleep ? 'sleep' : 'evening';
   const temps = comfort.temps, rhs = comfort.rhs, T = comfort[prof];
-  const j = rhs.reduce((bi, v, i) => Math.abs(v - state.duet.rh) < Math.abs(rhs[bi] - state.duet.rh) ? i : bi, 0);
-  const t0 = 23, t1 = 31, L = 44, R = 12, Tp = 10, B = 30;
+  const j = rhs.reduce((bi, v, i) => Math.abs(v - S.duet.rh) < Math.abs(rhs[bi] - S.duet.rh) ? i : bi, 0);
+  const t0 = 22, t1 = 31, L = 48, R = 12, Tp = 22, B = 30;
   const X = t => L + (t - t0) / (t1 - t0) * (w - L - R), Y = s => Tp + (6.5 - s) / 7 * (h - Tp - B);
   temps.forEach((t, i) => { if (t < t0 || t > t1 - 0.5) return;
-    for (let s = 0; s < 7; s++) { g.fillStyle = pmvColor(T[i][j][s] / 50); g.fillRect(X(t), Y(s + 0.5), X(t + 0.5) - X(t) + 0.5, Y(s - 0.5) - Y(s + 0.5) + 0.5); } });
+    for (let s = 0; s < 7; s++) { g.fillStyle = pmvColor(T[i][j][s] / 50); g.fillRect(X(t), Y(s + 0.5), X(t + 0.5) - X(t) + 0.6, Y(s - 0.5) - Y(s + 0.5) + 0.6); } });
   g.fillStyle = css('--muted'); g.textAlign = 'center';
-  for (let t = 24; t <= 30; t++) g.fillText(t + ' °C', X(t), h - 12);
+  for (let t = 22; t <= 30; t += 2) g.fillText(t + ' °C', X(t + 0.25), h - 10);
   g.textAlign = 'right'; for (let s = 0; s <= 6; s++) g.fillText(s ? 'step ' + s : 'off', L - 6, Y(s) + 4);
-  g.textAlign = 'left'; g.fillText(`${prof} profile · RH ${rhs[j]}%`, L + 6, Tp + 12);
-  const dot = (r, col, label) => { const x = X(Math.min(t1, Math.max(t0, r.t_air))), y = Y(r.fan_step);
-    g.beginPath(); g.arc(x, y, 8, 0, 7); g.fillStyle = col; g.fill(); g.strokeStyle = css('--panel'); g.lineWidth = 2; g.stroke();
-    g.fillStyle = css('--ink'); g.font = '600 12px system-ui'; g.fillText(label, x + 12, y + 4); g.font = '11px system-ui'; };
-  if (state.base.present) dot(state.base, css('--base'), 'Normal');
-  if (state.duet.present) dot(state.duet, css('--accent'), 'Duet');
+  g.textAlign = 'left'; g.fillText(`${prof === 'sleep' ? 'Sleeping' : 'Awake'} · humidity ${rhs[j]}% · blue = too cool, orange = too warm`, L, 13);
+  const dot = (r, col, label) => { if (!r.present) return; const x = X(Math.min(t1 - 0.2, Math.max(t0 + 0.2, r.t_air))), y = Y(r.fan_step);
+    g.beginPath(); g.arc(x, y, 9, 0, 7); g.fillStyle = col; g.fill(); g.lineWidth = 2.5; g.strokeStyle = css('--panel'); g.stroke();
+    g.font = '600 12px Inter,system-ui'; const tw = g.measureText(label).width; const lx = x + 14 + tw > w ? x - 14 - tw : x + 14;
+    g.fillStyle = css('--panel'); g.fillRect(lx - 3, y - 9, tw + 6, 17); g.fillStyle = css('--ink'); g.fillText(label, lx, y + 4); g.font = '11px Inter,system-ui'; };
+  dot(S.base, css('--base'), 'Normal room'); dot(S.duet, css('--accent'), 'Duet');
 }
-function chart(cv, series, lo, hi, unit, band) {
-  const [g, w, h] = setup(cv);
-  const L = 44, R = 10, Tp = 8, B = 20;
-  const all = [...hist.base, ...hist.duet]; if (!all.length || !state) return;
-  const tA = state.t - 12 * 3600, tB = state.t;
+const charts = {};
+function chart(id, series, lo, hi, unit, band, ticks) {
+  const cv = $(id); const [g, w, h] = setup(cv);
+  const L = 48, R = 12, Tp = 8, B = 20;
+  const tB = S.t, tA = tB - 12 * 3600;
   const X = t => L + (t - tA) / (tB - tA) * (w - L - R), Y = v => Tp + (hi - v) / (hi - lo) * (h - Tp - B);
+  charts[id] = {X, tA, tB, L, R, w, series, unit};
+  for (const [a, sl, wk] of S.nights) { if (wk < tA || sl > tB) continue; g.fillStyle = css('--panel2'); g.fillRect(X(Math.max(tA, sl)), Tp, X(Math.min(tB, wk)) - X(Math.max(tA, sl)), h - Tp - B); }
   if (band) { g.fillStyle = css('--accent-soft'); g.fillRect(L, Y(band[1]), w - L - R, Y(band[0]) - Y(band[1])); }
   g.strokeStyle = css('--line'); g.lineWidth = 1; g.fillStyle = css('--muted'); g.textAlign = 'right';
-  const step = (hi - lo) / 4;
-  for (let v = lo; v <= hi + 1e-9; v += step) { g.beginPath(); g.moveTo(L, Y(v)); g.lineTo(w - R, Y(v)); g.stroke(); g.fillText((Math.round(v * 10) / 10) + unit, L - 6, Y(v) + 4); }
+  for (const v of ticks) { g.beginPath(); g.moveTo(L, Y(v)); g.lineTo(w - R, Y(v)); g.stroke(); g.fillText(v + unit, L - 6, Y(v) + 4); }
   g.textAlign = 'center';
-  for (let t = Math.ceil(tA / 7200) * 7200; t <= tB; t += 7200) g.fillText(hhmm(t).slice(-5), X(t), h - 4);
+  for (let t = Math.ceil(tA / 7200) * 7200; t <= tB; t += 7200) g.fillText(hhmm(t), X(t), h - 4);
   for (const s of series) {
-    g.strokeStyle = s.color; g.lineWidth = s.width || 2; g.setLineDash(s.dash || []); g.beginPath(); let pen = false;
+    g.strokeStyle = s.color; g.lineWidth = s.width || 2; g.setLineDash(s.dash || []); g.beginPath(); let pen = false, prev = null;
     for (const r of s.data) { const v = s.get(r); if (v === null || v === undefined || r[0] < tA) { pen = false; continue; }
-      const x = X(r[0]), y = Y(Math.max(lo, Math.min(hi, v))); if (!pen) { g.moveTo(x, y); pen = true; } else g.lineTo(x, y); }
+      const x = X(r[0]), y = Y(Math.max(lo, Math.min(hi, v)));
+      if (!pen) { g.moveTo(x, y); pen = true; } else if (s.step) { g.lineTo(x, prev); g.lineTo(x, y); } else g.lineTo(x, y); prev = y; }
     g.stroke(); g.setLineDash([]);
   }
 }
 function drawCharts() {
-  const A = css('--accent'), Bc = css('--base');
-  chart($('#c-temp'), [
-    {data: hist.base, get: r => r[1], color: Bc}, {data: hist.duet, get: r => r[1], color: A},
-    {data: hist.base, get: r => r[2], color: Bc, dash: [4, 4], width: 1.2}, {data: hist.duet, get: r => r[2], color: A, dash: [4, 4], width: 1.2},
-  ], 22, 34, ' °C');
-  chart($('#c-pmv'), [{data: hist.base, get: r => r[5], color: Bc}, {data: hist.duet, get: r => r[5], color: A}], -1.5, 1.5, '', [-0.5, 0.5]);
-  chart($('#c-pow'), [{data: hist.base, get: r => r[3], color: Bc}, {data: hist.duet, get: r => r[3], color: A}], 0, 2400, ' W');
+  if (!S) return;
+  const A = css('--accent'), Bc = css('--base'), F = css('--faint');
+  chart('#cTemp', [
+    {name: 'Outside', data: hist.duet, get: r => r[6], color: F, width: 1.2, fmt: v => v.toFixed(1) + ' °C'},
+    {name: 'Normal room', data: hist.base, get: r => r[1], color: Bc, fmt: v => v.toFixed(1) + ' °C'},
+    {name: 'Duet room', data: hist.duet, get: r => r[1], color: A, fmt: v => v.toFixed(1) + ' °C'},
+    {name: 'Normal AC set', data: hist.base, get: r => r[2], color: Bc, dash: [5, 4], width: 1.3, step: true, fmt: v => v + ' °C'},
+    {name: 'Duet AC set', data: hist.duet, get: r => r[2], color: A, dash: [5, 4], width: 1.3, step: true, fmt: v => v + ' °C'},
+  ], 20, 40, '°', null, [20, 25, 30, 35, 40]);
+  chart('#cPmv', [{name: 'Normal room', data: hist.base, get: r => r[5], color: Bc, fmt: v => (v > 0 ? '+' : '') + v.toFixed(2)},
+    {name: 'Duet room', data: hist.duet, get: r => r[5], color: A, fmt: v => (v > 0 ? '+' : '') + v.toFixed(2)}], -1.5, 1.5, '', [-0.5, 0.5], [-1.5, -0.5, 0.5, 1.5]);
+  chart('#cPow', [{name: 'Normal room', data: hist.base, get: r => r[3], color: Bc, fmt: v => v + ' W'},
+    {name: 'Duet room', data: hist.duet, get: r => r[3], color: A, fmt: v => v + ' W'}], 0, 2400, '', null, [0, 800, 1600, 2400]);
+  chart('#cFan', [{name: 'Normal room', data: hist.base, get: r => r[4], color: Bc, step: true, fmt: v => 'step ' + v},
+    {name: 'Duet room', data: hist.duet, get: r => r[4], color: A, step: true, fmt: v => 'step ' + v}], 0, 6, '', null, [0, 3, 6]);
 }
-addEventListener('resize', () => { drawMap(); drawCharts(); });
+function hover(ev) {
+  const cv = ev.currentTarget, c = charts['#' + cv.id]; if (!c || !S) return;
+  const rect = cv.getBoundingClientRect(), x = ev.clientX - rect.left;
+  if (x < c.L || x > c.w - c.R) return unhover();
+  const t = c.tA + (x - c.L) / (c.w - c.L - c.R) * (c.tB - c.tA);
+  let html = `<b>${stamp(t)}</b>`;
+  for (const s of c.series) {
+    let best = null, bd = 1e9; for (const r of s.data) { const d = Math.abs(r[0] - t); if (d < bd) { bd = d; best = r; } }
+    const v = best && bd < 180 ? s.get(best) : null;
+    html += `<div class="r"><span style="color:${s.color}">${esc(s.name)}</span><span class="num">${v == null ? '—' : s.fmt(v)}</span></div>`;
+  }
+  const tip = $('#tip'), host = cv.closest('.card').getBoundingClientRect();
+  tip.innerHTML = html; tip.hidden = false;
+  const tx = ev.clientX - host.left + 16, ty = ev.clientY - host.top + 12;
+  tip.style.left = Math.min(tx, host.width - 200) + 'px'; tip.style.top = ty + 'px';
+  drawCharts(); for (const id of ['#cTemp', '#cPmv', '#cPow', '#cFan']) { const g = $(id).getContext('2d'), cc = charts[id]; const xx = cc.X(t);
+    g.strokeStyle = css('--ink'); g.globalAlpha = .35; g.lineWidth = 1; g.beginPath(); g.moveTo(xx, 0); g.lineTo(xx, +$(id).getAttribute('height')); g.stroke(); g.globalAlpha = 1; }
+}
+function unhover() { $('#tip').hidden = true; drawCharts(); }
+
+// ------------------------------------------------------------------ log
+const TAGS = ['all', 'ac', 'governor', 'ir', 'remote', 'user', 'fault', 'mode', 'learn', 'inject'];
+function renderLog() {
+  const rows = logRows.filter(r => logFilter === 'all' || r[1] === logFilter).slice(0, 200);
+  $('#log').innerHTML = rows.length ? rows.map(([t, tag, msg]) => `<div><span class="faint">${stamp(t)}</span><span class="tag ${esc(tag)}">${esc(tag)}</span><span>${esc(msg)}</span></div>`).join('')
+    : `<div style="display:block" class="muted">Nothing yet. Duet logs as soon as the occupant switches the AC on.</div>`;
+}
+
+// ------------------------------------------------------------------ connect view
+function node(id, x, y, w, h, title, sub, lines, cls = '') {
+  return `<g class="node ${cls}" id="n-${id}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12"/>
+    <text class="t" x="${x + 14}" y="${y + 24}">${esc(title)}</text><text class="s" x="${x + 14}" y="${y + 42}">${esc(sub)}</text>
+    ${lines.map((l, i) => `<text class="v" x="${x + 14}" y="${y + 66 + i * 19}">${esc(l)}</text>`).join('')}</g>`;
+}
+function edge(id, d, label, lx, ly, state, anchor = 'start') {
+  return `<g class="edge ${state}" id="e-${id}"><path d="${d}" marker-end="url(#ah-${state || 'idle'})"/><text x="${lx}" y="${ly}" text-anchor="${anchor}">${esc(label)}</text></g>`;
+}
+function renderFlow(m) {
+  const d = m.duet, f = d.fw || {}, now = performance.now();
+  if (f.last_ir && f.last_ir[0] !== lastIrT) { if (lastIrT !== null) { hotUntil.ir = now + 1800; hotUntil.gov = now + 1800; } lastIrT = f.last_ir[0]; }
+  if (f.last_fan && f.last_fan[0] !== lastFanT) { if (lastFanT !== null) hotUntil.fan = now + 1500; lastFanT = f.last_fan[0]; }
+  const hot = k => hotUntil[k] > now;
+  const irOk = !f.last_ir || f.last_ir[1];
+  const flowing = !m.paused && !m.job;
+  const st = on => on ? (flowing ? 'flowing' : '') : '';
+  const markers = ['idle', 'flowing', 'hot', 'blocked'].map(k => {
+    const col = {idle: css('--faint'), flowing: css('--accent'), hot: css('--warm'), blocked: css('--bad')}[k];
+    return `<marker id="ah-${k}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="${col}"/></marker>`; }).join('');
+  const lastIr = f.last_ir ? `${stamp(f.last_ir[0])} → ${f.last_ir[2]} °C ${f.last_ir[1] ? '✓' : '✗ lost'}` : 'no frame yet';
+  const rejCount = Object.values(f.rejected || {}).reduce((a, b) => a + b, 0);
+  let svg = `<defs>${markers}</defs>`;
+  // three columns with wide gaps so every arrow label sits in open space
+  const c1 = 20, c2 = 300, c3 = 670, c4 = 960, w1 = 190, w2 = 270, w3 = 220, w4 = 210;
+  svg += node('wx', c1, 235, w1, 120, 'Weather', 'Jaipur outside air, sun', [`${m.weather.t_out} °C · ${m.weather.rh_out}%`, `sun ${m.weather.sun} W/m²`]);
+  svg += node('room', c2, 190, w2, 205, 'Bedroom (simulated)', 'walls, air, moisture, person', [`air ${d.t_air.toFixed(2)} °C`, `walls ${d.t_wall.toFixed(2)} °C`, `RH ${d.rh}%`, d.present ? (d.asleep ? 'person asleep' : 'person awake') : 'nobody home', d.pmv == null ? '' : `comfort PMV ${d.pmv > 0 ? '+' : ''}${d.pmv.toFixed(2)}`]);
+  svg += node('pod', c3, 20, w3, 130, 'Sensor pod', 'SHT40 + LD2410C radar', [`${f.t_sensor ?? '—'} °C · ${f.rh_sensor ?? '—'}%`, `presence: ${f.occupied ? 'yes' : 'no'}`, f.sensor_ok === false ? 'FAULT: not trusted' : 'healthy']);
+  svg += node('fan', c3, 240, w3, 100, 'Ceiling fan (BLDC)', 'Atomberg 1200 mm', [`step ${d.fan_step} · ${d.fan_w} W`]);
+  svg += node('fw', c4, 190, w4, 205, 'Duet firmware', 'real C++ (controller.cpp)', [`mode: ${f.mode ?? '—'}`, `bed ≈ ${f.t_bed_est ?? '—'} °C`, `PMV est ${f.pmv_est ?? '—'}`, `target ${f.target ?? '—'}`, `${f.profile ?? ''} profile`], 'fw');
+  svg += node('gov', c4, 455, w4, 125, 'Safety governor', 'governor.cpp: 5 rules', [(f.commands || rejCount) ? verdictShort(f.verdict) : 'no request yet', `refused so far: ${rejCount}`]);
+  svg += node('ir', c3, 455, w3, 125, 'IR LED, 940 nm', '38 kHz full-state frames', [lastIr, `${f.frames ?? 0} frames · ${f.resends ?? 0} resends`]);
+  svg += node('ac', c2, 455, w2, 125, 'Split AC (inverter)', 'simulated 1.5 ton', [d.ac_power ? `set ${d.ac_sp} °C · ${Math.round(d.ac_w)} W` : 'off', `${d.ac_kwh.toFixed(2)} kWh so far`]);
+  const mid = (a, b) => (a + b) / 2;
+  svg += edge('wx', `M${c1 + w1 + 4} 295 H${c2 - 6}`, 'heat in', mid(c1 + w1, c2), 285, st(true), 'middle');
+  svg += edge('pod', `M${c2 + w2 + 4} 215 H${mid(c2 + w2, c3)} V85 H${c3 - 6}`, 'air near the ceiling', mid(c2 + w2, c3) - 8, 150, st(true), 'end');
+  svg += edge('fwin', `M${c3 + w3 + 4} 85 H${c4 + w4 / 2} V${190 - 6}`, 'I2C 0x44 · UART', c4 + w4 / 2 + 10, 140, st(true));
+  svg += edge('gov', `M${c4 + w4 / 2} 399 V${455 - 6}`, 'raise / lower', c4 + w4 / 2 + 10, 428, hot('gov') ? 'hot' : '');
+  svg += edge('ir', `M${c4 - 4} 517 H${c3 + w3 + 6}`, 'approved', mid(c3 + w3, c4), 507, hot('ir') ? 'hot' : '', 'middle');
+  svg += edge('ac', `M${c3 - 4} 517 H${c2 + w2 + 6}`, irOk ? '38 kHz frame' : 'frame lost', mid(c2 + w2, c3), 507, hot('ir') ? (irOk ? 'hot' : 'blocked') : '', 'middle');
+  svg += edge('cool', `M${c2 + w2 / 2} 455 V${395 + 6}`, d.ac_w > 30 ? `cooling ≈${Math.round(d.ac_w * 3)} W` : 'compressor idle', c2 + w2 / 2 + 10, 430, st(d.ac_w > 30));
+  svg += edge('fancmd', `M${c4 - 4} 290 H${c3 + w3 + 6}`, 'fan step', mid(c3 + w3, c4), 280, hot('fan') ? 'hot' : '', 'middle');
+  svg += edge('air', `M${c3 - 4} 290 H${c2 + w2 + 6}`, 'air speed', mid(c2 + w2, c3), 280, st(d.fan_step > 0), 'middle');
+  $('#flow').innerHTML = svg;
+
+  const s = [
+    `<b>Weather → room.</b> The twin works out heat leaking in through the wall and window from outside (${m.weather.t_out} °C) and from the person, and the AC's cooling taking heat out. Room air is now ${d.t_air.toFixed(1)} °C.`,
+    `<b>Room → sensor pod.</b> The simulated SHT40 sees the air near the ceiling, a little warmer than at the bed, with real sensor noise and lag: <code>${f.t_sensor ?? '—'} °C, ${f.rh_sensor ?? '—'}%</code>. The radar reports whether someone is there.`,
+    `<b>Python → C++.</b> Python packs those readings into a struct and calls <code>duet_sil_step()</code> in the compiled firmware library (ctypes). This is the only door between the simulation and the firmware, standing in for the I2C and UART wires.`,
+    `<b>Firmware decides.</b> Every 30 s it picks the lowest fan step that keeps comfort on target; every 5 min it asks "would 1 °C warmer still be comfortable with the fan helping?" Mode now: <code>${f.mode ?? '—'}</code>.`,
+    `<b>Governor checks.</b> Any setpoint change goes through <code>SafetyGovernor::check()</code>. Last answer: <b>${esc((f.commands || rejCount) ? (VERDICT_TEXT[f.verdict] || f.verdict) : 'no request yet')}</b>.`,
+    `<b>IR → AC.</b> An approved change is sent twice as a full-state IR frame. The twin drops ${Math.round(m.settings.ir_loss * 100)}% of frames on purpose; Duet notices when the room does not respond and resends.`,
+    `<b>Back to the browser.</b> The server sends this page a snapshot four times a second over plain HTTP. Then the loop repeats.`,
+  ];
+  $('#loopSteps').innerHTML = s.map(x => `<li><div>${x}</div></li>`).join('');
+}
+
+// ------------------------------------------------------------------ results tab
+async function loadResults() {
+  let r; try { r = await (await fetch('/api/results')).json(); } catch { return; }
+  const p = v => `${Math.round(+v * 100)}%`;
+  if (r.calibration_checks) $('#rCal').innerHTML = `<table><tr><th>Check</th><th>Twin</th><th>Published</th><th>Result</th></tr>${r.calibration_checks.map(c => `<tr><td>${esc(c.check)}</td><td class="num">${esc(c.twin)}</td><td>${esc(c.published)}</td><td>${c.pass === 'True' ? '<span class="pill ok">PASS</span>' : '<span class="pill bad">FAIL</span>'}</td></tr>`).join('')}</table>`;
+  else $('#rCal').innerHTML = '<span class="muted">Run <span class="mono">python run.py experiments</span> to fill this in.</span>';
+  const names = {premonsoon_week: 'Pre-monsoon week (May)', monsoon_week: 'Monsoon week (Aug)', hottest_day: 'Hottest night'};
+  if (r.summary) $('#rSum').innerHTML = `<table><tr><th>Weather</th><th>Compared with</th><th class="n">AC saved</th><th class="n">5–95%</th><th class="n">AC kWh/night Duet vs base</th><th class="n">Comfortable Duet vs base</th><th class="n">IR success</th><th class="n">Safety breaches</th></tr>${r.summary.map(s => `<tr><td>${esc(names[s.weather] || s.weather)}</td><td>${esc(info.baselines[s.vs] || s.vs)}</td><td class="n"><b>${p(s.ac_saving_median)}</b></td><td class="n">${p(s.ac_saving_p5)} – ${p(s.ac_saving_p95)}</td><td class="n">${(+s.duet_ac_kwh_night).toFixed(2)} vs ${(+s.base_ac_kwh_night).toFixed(2)}</td><td class="n">${p(s.duet_in_band)} vs ${p(s.base_in_band)}</td><td class="n">${p(s.ir_success)}</td><td class="n">${s.safety_violations}</td></tr>`).join('')}</table>`;
+  else $('#rSum').innerHTML = '<span class="muted">No results yet.</span>';
+  if (r.faults) $('#rFaults').innerHTML = `<table><tr><th>Fault</th><th>Pass rule</th><th>Result</th><th>What happened</th></tr>${r.faults.map(f => `<tr><td>${esc(f.fault)}</td><td>${esc(f.pass_rule)}</td><td>${f.result === 'PASS' ? '<span class="pill ok">PASS</span>' : '<span class="pill bad">FAIL</span>'}</td><td class="muted">${esc(f.detail)}</td></tr>`).join('')}</table>`;
+  else $('#rFaults').innerHTML = '<span class="muted">No results yet.</span>';
+  $('#rFigs').innerHTML = ['fig1_night_trace', 'fig2_savings', 'fig3_calibration'].map(n => `<img src="/figures/${n}.png" alt="${n}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'muted',textContent:'${n}.png not generated yet'}))">`).join('');
+}
+
+// ------------------------------------------------------------------ render
+let tab = 'live';
+function render(m) {
+  renderHeader(m); renderScenSummary(m);
+  if (tab === 'live') {
+    renderTimeline(m); renderKpis(m);
+    $('#roomBase').innerHTML = roomCard(m.base, 'Normal room', esc(m.baseline.label), false);
+    $('#roomDuet').innerHTML = roomCard(m.duet, 'Duet room', `Duet ${m.settings.device === 'clip' ? 'Clip (retrofit)' : 'Native'} · real firmware ${esc(info ? info.firmware : '')}`, true);
+    drawMap(); if ($('#tip').hidden) drawCharts(); renderLog();
+    $('#pref').value = m.pref; $('#prefV').textContent = (m.pref > 0 ? '+' : '') + m.pref.toFixed(1);
+  } else if (tab === 'connect') renderFlow(m);
+}
+
+// ------------------------------------------------------------------ wiring
+async function boot() {
+  try { info = await (await fetch('/api/info')).json(); } catch { setConn(false, 3); setTimeout(boot, 1500); return; }
+  buildForm();
+  fetch('/api/comfort').then(r => r.json()).then(j => { comfort = j; drawMap(); });
+  $('#logbar').innerHTML = TAGS.map(t => `<button data-t="${t}" class="${t === 'all' ? 'on' : ''}">${t}</button>`).join('');
+  $('#logbar').onclick = e => { const b = e.target.closest('button'); if (!b) return; logFilter = b.dataset.t; $$('#logbar button').forEach(x => x.classList.toggle('on', x === b)); renderLog(); };
+  $('#speeds').onclick = e => { const b = e.target.closest('button'); if (b) cmd({cmd: 'speed', value: +b.dataset.s}); };
+  $('#play').onclick = () => cmd({cmd: 'pause', value: !(S && S.paused)});
+  document.addEventListener('keydown', e => { if (e.code === 'Space' && !/INPUT|SELECT|TEXTAREA|BUTTON/.test(document.activeElement.tagName)) { e.preventDefault(); $('#play').click(); } });
+  $$('[data-hour]').forEach(b => b.onclick = () => cmd({cmd: 'jump_hour', hour: +b.dataset.hour}));
+  $('#faults').onclick = async e => { const b = e.target.closest('button'); if (!b) return; const r = await cmd({cmd: 'fault', name: b.dataset.f}); if (r.ok) toast('Injected: ' + info.faults[b.dataset.f]); };
+  $$('[data-r]').forEach(b => b.onclick = async () => { const r = await cmd({cmd: 'remote', setpoint: +b.dataset.r}); if (r.ok) toast(`User pressed the remote: ${b.dataset.r} °C`); });
+  $('#pref').onchange = e => cmd({cmd: 'preference', value: +e.target.value});
+  const tl = $('#tl');
+  tl.onmousemove = e => { if (!S) return; const t = tlTime(e), tip = $('#tltip'); tip.hidden = false; tip.textContent = stamp(t, true); tip.style.left = (e.clientX - tl.getBoundingClientRect().left) + 'px'; };
+  tl.onmouseleave = () => $('#tltip').hidden = true;
+  tl.onclick = e => { if (!S) return; const t = tlTime(e); cmd({cmd: 'jump', to: t}); toast((t < S.t ? 'Replaying to ' : 'Skipping to ') + stamp(t, true)); };
+  $$('#tabs button').forEach(b => b.onclick = () => {
+    tab = b.dataset.tab; $$('#tabs button').forEach(x => x.classList.toggle('on', x === b));
+    $$('[data-pane]').forEach(p => p.hidden = p.dataset.pane !== tab);
+    if (tab === 'results') loadResults(); if (S) render(S);
+  });
+  for (const id of ['#cTemp', '#cPmv', '#cPow', '#cFan']) { $(id).addEventListener('mousemove', hover); $(id).addEventListener('mouseleave', unhover); }
+  addEventListener('resize', () => S && render(S));
+  poll();
+}
+boot();
 </script>
 </body>
 </html>

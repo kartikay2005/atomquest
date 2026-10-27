@@ -1,76 +1,172 @@
-# Duet — software prototype (AtomQuest 2026, Track 1, Team Edision)
+# Duet — software prototype
 
-Duet coordinates a ceiling fan with the room's split AC: it raises the AC setpoint
-and adds just enough air movement to keep ASHRAE 55 comfort constant. This repo is
-the Round 2 prototype: **the real device firmware running in closed loop against a
-physics-based digital twin of a Jaipur bedroom**, plus the experiments that produce
-every number in the report.
+**AtomQuest 2026 · Track 1 (Fan) · Team Edision**
 
-```
-comfort/      ASHRAE 55 comfort tables (pythermalcomfort 4.7.0) -> C header for the firmware
-firmware/     C++ control core + safety governor (one source for chip and laptop)
-  src/core/     controller, governor, comfort lookup   (no heap, no RTTI)
-  src/sil/      C ABI so the twin can drive the core   (libduet_sil.so)
-  src/esp32/    ESP32-C3 drivers: SHT40, LD2410C, IR via IRremoteESP8266, Wi-Fi/MQTT
-  test/         unit tests (142 checks)
-twin/         Python digital twin: room 2R2C + moisture, inverter AC, BLDC fan, sensor
-              pod, IR link, occupants with a comfort-driven remote-pressing user
-  tests/        Hypothesis property tests of the safety rules against the real firmware
-experiments/  calibration vs field data, fault-injection suite, Duet vs baselines matrix
-console/      live engineer console (FastAPI + WebSocket + one HTML page)
-wokwi/        browser circuit simulation (next block)
-hardware/     schematic, PCB, enclosure CAD, BOM (next block)
-```
+Duet makes a ceiling fan and a split AC work together. Moving air makes a room feel cooler,
+so Duet lets the AC run a few degrees warmer and turns the fan up just enough that you feel
+the same. The AC is the big electricity user, so the bill goes down while you stay comfortable.
 
-## Quick start (Windows, macOS or Linux)
+There is no hardware yet, so this repo shows Duet as a **virtual hardware prototype**: the
+real device code runs against a simulated bedroom, and you can watch the two side by side.
+
+---
+
+## Run it (Windows, macOS or Linux)
+
+You need **Python 3.10 or newer**. In a terminal, inside this folder:
 
 ```bash
-pip install numpy scipy pandas pythermalcomfort==4.7.0 fastapi uvicorn hypothesis pytest
-python comfort/build_tables.py                       # writes firmware/include/duet/comfort_table.h
-cmake -S firmware -B firmware/build && cmake --build firmware/build --config Release
-firmware/build/test_core                             # 142 passed, 0 failed
-pytest twin/tests -q                                 # property tests
-python console/server.py                             # open http://localhost:8000
-```
-On Windows with Visual Studio the library is `firmware/build/Release/duet_sil.dll`;
-point the twin at it with `set DUET_SIL_LIB=firmware\build\Release\duet_sil.dll`.
-
-Experiments (each writes CSVs to `experiments/out/`):
-
-```bash
-python experiments/calibrate.py        # twin vs Indian bedroom field data (4 checks)
-python experiments/faults.py           # 7 injected faults, each with a pass rule
-python experiments/run_matrix.py --seeds 30   # Duet vs 3 baselines, 3 weathers
+pip install -r requirements.txt
+python run.py
 ```
 
-## How the pieces fit
+`run.py` checks everything, builds anything missing, starts the console and opens it in
+your browser at **http://127.0.0.1:8000**. Leave the terminal window open while you use it;
+close it (or press Ctrl+C) to stop.
 
-1. `comfort/build_tables.py` computes PMV with ASHRAE 55's SET-based cooling effect for
-   every (temperature, humidity, fan step) and writes two int8 tables (Evening: met 1.0
-   clo 0.5; Sleep: met 0.8 clo 0.9) into a C header. The Sleep profile is below the
-   library's met 1.0 input limit, so it is generated with `limit_inputs=False` (stated).
-2. The firmware core reads sensors through a HAL. On the chip the HAL talks to the SHT40,
-   LD2410C and IR hardware; in SIL it is fed by the twin every 5 simulated seconds.
-3. Every AC command passes the **safety governor**: 24–28 °C, at most 1 °C per 20 min and
-   3 changes per hour, no raise above 60 % RH, nothing while the sensor is untrusted, and
-   the user's remote always wins (2 h hold after a user change).
-4. The twin computes true comfort at the bed with its own mean radiant temperature, runs
-   a user who presses the remote when uncomfortable (and pulls up a blanket when cold
-   asleep), and an independent **SafetyMonitor** audits every Duet command.
+You do **not** need a C++ compiler on Windows x64 or Linux x64: a ready-built copy of the
+firmware library is included. On a Mac, install CMake and Xcode's command line tools once.
 
-## Model assumptions to calibrate in Round 3
+Other commands:
 
-| Parameter | Value used | Source / status |
-| --- | --- | --- |
-| Air speed at the bed per fan step | 0.15–0.80 m/s | Assumption inside CBE measured 0.35–0.6 m/s room averages |
-| Fan power per step | 4 W + 31 W × (step/6)³ | 35 W top speed is the product spec; curve is an assumption |
-| Ceiling-to-bed stratification | 1.0 °C (fan off) to 0.1 °C (step 6) | Assumption; ±30 % per seed in the twin |
-| AC part-load COP curve | rated 3.6, peak ×1.3 at 50 % load | Shape assumption; calibrated so the twin matches field data |
-| Room R/C values | see `plant.py` | Grey-box; checked by `calibrate.py` |
-| Weather | Jaipur synthetic from monthly normals | Replace with the ISHRAE EPW: `Scenario(epw="IND_RJ_Jaipur...epw")` |
+| Command | What it does |
+| --- | --- |
+| `python run.py check` | Only check the setup and run a one-hour simulation |
+| `python run.py test` | Run every automated test (about a minute) |
+| `python run.py experiments` | Recompute all results and figures (about 15 minutes) |
+| `python run.py build` | Rebuild the firmware library from source (needs CMake + a compiler) |
 
-## Firmware on the real board
+---
 
-`pio run -e esp32c3` builds the same core with the ESP32 drivers (`platformio.ini`).
-Set Wi-Fi, MQTT host and AC brand with build flags. Not compiled in this environment
-(the PlatformIO toolchain download was rate-limited); compile it once on a laptop.
+## How it works, in the simplest terms
+
+Think of two identical bedrooms in Jaipur on the same night, with the same person in each:
+
+- **Normal room:** the person sets the AC to 24 °C and leaves the fan on medium, like most homes.
+- **Duet room:** the same, but Duet is watching and quietly adjusting the AC and the fan.
+
+Both rooms are simulated on your computer. Duet's "brain" is the **actual code that would
+run on the device**, not an imitation of it.
+
+### The five pieces
+
+```
+   ┌──────────┐   heat    ┌──────────────┐   air temp,   ┌────────────┐
+   │ Weather  │ ────────▶ │ Bedroom twin │ ─ humidity ─▶ │ Sensor pod │
+   │ (Jaipur) │           │ walls, air,  │               │ SHT40 +    │
+   └──────────┘           │ person       │ ◀── air ───┐  │ radar      │
+                          └──────────────┘    speed   │  └─────┬──────┘
+                              ▲                        │        │ readings
+                      cooling │                   ┌────┴───┐    ▼
+                          ┌───┴──────┐            │  Fan   │ ┌──────────────┐
+                          │ Split AC │            └────▲───┘ │ Duet firmware│
+                          └───▲──────┘                 └──── │ (real C++)   │
+                              │ IR frame  ┌──────────┐ fan   └──────┬───────┘
+                              └────────── │ Safety   │ ◀── request ─┘
+                                          │ governor │
+                                          └──────────┘
+```
+
+1. **Weather** (`twin/duet_twin/weather.py`): outside temperature, humidity and sun for any
+   month from March to October, built from Jaipur's climate averages.
+2. **Bedroom twin** (`twin/duet_twin/plant.py`): a small physics model of the room. Heat
+   leaks in through the wall and window, the person adds heat and moisture, and the AC
+   takes heat out. It also models the split AC (an inverter that slows down as the room
+   nears its setpoint) and the fan (power rises steeply with speed).
+3. **Sensor pod** (simulated SHT40 and radar): reads the air near the ceiling, with the same
+   noise, delay and occasional faults a real sensor has.
+4. **Duet firmware** (`firmware/src/core/`): the real C++ code. Every 30 seconds it picks the
+   lowest fan speed that keeps you comfortable. Every 5 minutes it asks, *"would one degree
+   warmer still be comfortable if the fan helped?"* If yes, it asks to raise the AC.
+5. **Safety governor** (`firmware/src/core/governor.cpp`): the only way to reach the AC.
+   It refuses anything outside 24–28 °C, more than 1 °C per 20 minutes, more than 3
+   changes an hour, any raise above 60 % humidity, anything while the sensor is faulty,
+   and anything after the person used their own remote (they always win).
+
+### How the pieces talk to each other
+
+This is the part that is hard to see, so step by step:
+
+- **Python ↔ C++.** The firmware is compiled into a library file
+  (`libduet_sil.dll` on Windows, `.so` on Linux). Python loads it with `ctypes`, a standard
+  way to call C code from Python. Every 5 simulated seconds Python packs the sensor
+  readings into a small record and calls one function, `duet_sil_step()`. The firmware
+  replies with what it wants to do: change the fan, send an IR frame, and its current
+  thinking. That function call stands in for the wires on the real board. File:
+  `twin/duet_twin/sil.py`.
+- **Simulation ↔ browser.** `console/engine.py` runs both rooms in a background thread.
+  `console/server.py` is a tiny web server (Python's built-in one). Four times a second
+  the page asks it "what's new since my last question?" and draws the answer. Buttons send
+  short commands back, like "inject a sensor fault".
+- **On the real device** the same firmware files are compiled for the ESP32-C3 chip, and
+  the record-passing is replaced by real drivers (`firmware/src/esp32/`): I2C for the SHT40,
+  UART for the radar, and an IR LED for the AC.
+
+Open the console's **How it connects** tab to see this loop drawn with live values.
+
+### What happens every 5 simulated seconds
+
+1. The twin moves the room forward 5 seconds: heat in, cooling out, moisture in and out.
+2. The sensor pod reads the room (with noise) and the radar says whether someone is there.
+3. Python calls the firmware with those readings.
+4. The firmware updates its picture of the room and, when its timers say so, decides on
+   the fan and the AC.
+5. Any AC change goes through the safety governor, then out as an IR frame. Some frames
+   are lost on purpose, like in a real room, so you can see Duet notice and resend.
+6. The twin applies the new AC setting and fan speed, and the loop repeats.
+
+A simulated person lives in both rooms. If they feel too warm for 10 minutes they press
+the AC remote, and if they feel cold while asleep they pull up a blanket. Fewer remote
+presses and fewer blankets mean Duet kept them comfortable.
+
+---
+
+## Using the console
+
+- **Scenario:** pick a month (May is hot and dry, August is humid), a start date, the
+  number of nights, a heatwave offset, one or two people, how lossy the IR link is, and
+  which normal room to compare against. Press *Apply and restart*.
+- **Time:** ▶/❚❚ or the space bar plays and pauses. Speeds go from real time to 3600×
+  (one simulated hour per second). Click the timeline, or 21:00 / Midnight / 03:00 / 06:00,
+  to jump. Jumping backwards replays the run exactly, because the same seed gives the same night.
+- **Try to break it:** inject faults or press the user's remote, then read the firmware log.
+- **Results tab:** the experiment tables and the report figures.
+
+## What the experiments found
+
+See `docs/RESULTS.md`. In short: against a room at 24 °C with the fan already on medium,
+Duet saved about 20 % of AC energy in a May week and 19 % in a monsoon week, kept people
+comfortable more of the time, and broke zero safety rules in 90 simulated weeks. On the
+hottest night it saved nothing, because the AC had no slack to give.
+
+## Folder map
+
+```
+run.py            one command to check, build, test and run
+requirements.txt  Python packages
+comfort/          builds the ASHRAE 55 comfort tables the firmware uses
+firmware/         the device code (C++), its tests, ESP32 drivers, prebuilt libraries
+twin/             the simulated bedroom, weather, person, and the Python <-> C++ bridge
+console/          the web console (server + one HTML page)
+experiments/      calibration, fault scenarios, Duet-vs-normal experiment, figures
+tests/            automated tests (see docs/TESTING.md)
+docs/             RESULTS.md, TESTING.md
+```
+
+## Troubleshooting
+
+| Symptom | Cause and fix |
+| --- | --- |
+| Page loads but every number shows "—" | The page cannot reach the simulation. Check the terminal for an error, then reload. (Older versions needed an extra WebSocket package; this version uses plain HTTP and needs nothing extra.) |
+| "Server offline" in the top bar | The terminal running `run.py` was closed. Start it again. |
+| `Missing Python packages` | Run `pip install -r requirements.txt` with the same Python you use for `run.py`. |
+| `No firmware library for this computer` | Install CMake and a C++ compiler, then `python run.py build`. Windows x64 and Linux x64 need neither. |
+| `struct sizes ... do not match` | An old build of the firmware library: `python run.py build`. |
+| Port 8000 is busy | The console picks the next free port and prints it in the terminal. |
+
+## Honest limits
+
+All numbers are simulated. The weather is generated from Jaipur's monthly averages until an
+ISHRAE weather file is dropped into `twin/data/` (the console then offers it). The fan's air
+speed per step, its power curve and the ceiling-to-bed temperature difference are assumptions
+to measure in Round 3 with a real fan, an anemometer and a plug-in energy meter.

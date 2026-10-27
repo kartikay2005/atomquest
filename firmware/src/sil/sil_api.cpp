@@ -85,6 +85,11 @@ void duet_sil_destroy(void* h) {
 
 int duet_sil_set(void* h, const char* key, double v) {
   Sil* s = static_cast<Sil*>(h);
+  // Safety limits are copied into the governor at begin(); changing them later would be
+  // silently ignored, so refuse instead.
+  if (s->ctl && (!strncmp(key, "min_", 4) || !strncmp(key, "max_s", 5) || !strncmp(key, "max_r", 5) ||
+                 !strncmp(key, "max_c", 5)))
+    return 0;
   ControllerConfig& c = s->ctl ? s->ctl->config() : s->cfg;
   const Millis m = static_cast<Millis>(v * kMinute);
   if (!strcmp(key, "preference")) c.preference = static_cast<float>(v);
@@ -106,6 +111,7 @@ int duet_sil_set(void* h, const char* key, double v) {
 
 void duet_sil_begin(void* h, int64_t now_ms) {
   Sil* s = static_cast<Sil*>(h);
+  if (s->ctl) { s->ctl->~Controller(); s->ctl = nullptr; }  // restart cleanly
   s->clock.t = now_ms;
   Hal hal{&s->clock, &s->climate, &s->presence, &s->tx, &s->rx, &s->fan, &s->log};
   s->ctl = new (s->storage) Controller(hal, s->cfg);
@@ -114,6 +120,7 @@ void duet_sil_begin(void* h, int64_t now_ms) {
 
 void duet_sil_step(void* h, const DuetSilInputs* in, DuetSilOutputs* out) {
   Sil* s = static_cast<Sil*>(h);
+  if (!s->ctl) { memset(out, 0, sizeof *out); return; }  // step before begin: no-op
   s->clock.t = in->now_ms;
   s->climate.r.temp_c = in->temp_c;
   s->climate.r.rh = in->rh;
@@ -196,6 +203,8 @@ void duet_gov_record(void* g, int64_t now_ms) { static_cast<SafetyGovernor*>(g)-
 
 const char* duet_sil_verdict_name(int v) { return verdict_name(static_cast<Verdict>(v)); }
 const char* duet_sil_mode_name(int m) { return mode_name(static_cast<Mode>(m)); }
-const char* duet_sil_version(void) { return "duet-fw 0.1.0 (sil)"; }
+const char* duet_sil_version(void) { return "duet-fw 0.2.0 (sil)"; }
+int duet_sil_sizeof_inputs(void) { return static_cast<int>(sizeof(DuetSilInputs)); }
+int duet_sil_sizeof_outputs(void) { return static_cast<int>(sizeof(DuetSilOutputs)); }
 
 }  // extern "C"

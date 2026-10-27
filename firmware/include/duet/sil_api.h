@@ -3,6 +3,12 @@
 #pragma once
 #include <stdint.h>
 
+#if defined(_WIN32)
+#define DUET_API __declspec(dllexport)
+#else
+#define DUET_API __attribute__((visibility("default")))
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -42,24 +48,27 @@ typedef struct {
   uint32_t rejected[10];
 } DuetSilOutputs;
 
-void* duet_sil_create(void);
-void duet_sil_destroy(void* h);
+DUET_API void* duet_sil_create(void);
+DUET_API void duet_sil_destroy(void* h);
 // Set a tunable before begin(). Returns 0 if the key is unknown.
-int duet_sil_set(void* h, const char* key, double value);
-void duet_sil_begin(void* h, int64_t now_ms);
-void duet_sil_step(void* h, const DuetSilInputs* in, DuetSilOutputs* out);
+DUET_API int duet_sil_set(void* h, const char* key, double value);
+DUET_API void duet_sil_begin(void* h, int64_t now_ms);
+DUET_API void duet_sil_step(void* h, const DuetSilInputs* in, DuetSilOutputs* out);
 // Pop one log line. Returns 1 if a line was written.
-int duet_sil_pop_log(void* h, int64_t* t_ms, char* tag, int tag_len, char* msg, int msg_len);
+DUET_API int duet_sil_pop_log(void* h, int64_t* t_ms, char* tag, int tag_len, char* msg, int msg_len);
 // Direct access to the safety governor, for property-based tests.
-void* duet_gov_create(void);
-void duet_gov_destroy(void* g);
-int duet_gov_check(void* g, int64_t now_ms, int known, int power, int setpoint, float rh,
+DUET_API void* duet_gov_create(void);
+DUET_API void duet_gov_destroy(void* g);
+DUET_API int duet_gov_check(void* g, int64_t now_ms, int known, int power, int setpoint, float rh,
                    int sensor_ok, int user_hold, int requested);
-void duet_gov_record(void* g, int64_t now_ms);
+DUET_API void duet_gov_record(void* g, int64_t now_ms);
 
-const char* duet_sil_verdict_name(int v);
-const char* duet_sil_mode_name(int m);
-const char* duet_sil_version(void);
+DUET_API const char* duet_sil_verdict_name(int v);
+DUET_API const char* duet_sil_mode_name(int m);
+DUET_API const char* duet_sil_version(void);
+// ABI check: Python compares these with ctypes.sizeof() before trusting the structs.
+DUET_API int duet_sil_sizeof_inputs(void);
+DUET_API int duet_sil_sizeof_outputs(void);
 
 #ifdef __cplusplus
 }

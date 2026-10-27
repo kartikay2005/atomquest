@@ -1,0 +1,14 @@
+# Needed to run the console and the simulation
+numpy>=1.26
+scipy>=1.11
+pandas>=2.1
+pythermalcomfort==4.7.0
+
+# Needed for tests, experiments and figures
+pytest>=8
+hypothesis>=6.100
+matplotlib>=3.8
+
+# Optional
+# paho-mqtt>=2.0        # publish to Home Assistant: python console/server.py --mqtt localhost
+# playwright>=1.45      # browser end-to-end test (then: python -m playwright install chromium)

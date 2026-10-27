@@ -142,6 +142,7 @@ class Controller {
   bool tracking_trend_ = false;
   Millis reversal_since_ = -1;
   bool vacant_fan_off_sent_ = false;
+  char log_buf_[160] = {};
   float prev_t_occ_ = 0;
   bool prev_t_occ_valid_ = false;
   int stable_count_ = 0;          // consecutive stable 5-min windows

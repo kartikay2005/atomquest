@@ -433,12 +433,11 @@ void Controller::set_fan(int8_t step) {
 
 void Controller::log(Millis now, const char* tag, const char* fmt, ...) {
   if (!hal_.log) return;
-  static char buf[160];
   va_list ap;
   va_start(ap, fmt);
-  vsnprintf(buf, sizeof buf, fmt, ap);
+  vsnprintf(log_buf_, sizeof log_buf_, fmt, ap);
   va_end(ap);
-  hal_.log->event(now, tag, buf);
+  hal_.log->event(now, tag, log_buf_);
 }
 
 }  // namespace duet

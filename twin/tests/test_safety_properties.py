@@ -63,17 +63,18 @@ def test_governor_never_approves_an_unsafe_change(start_sp, steps):
 
 
 event_st = st.tuples(
-    st.integers(1, 120),                     # ticks of 5 s at this condition
+    st.integers(1, 900),                     # ticks of 5 s at this condition (up to 75 min)
     st.floats(-0.5, 0.5, allow_nan=False),   # temperature drift per block
     st.floats(30, 85, allow_nan=False),      # RH
     st.booleans(),                           # occupied
-    st.sampled_from(["none", "none", "none", "remote_ac", "remote_fan", "crc", "stuck", "off"]),
+    st.sampled_from(["follow", "follow", "follow", "none", "none", "remote_ac", "remote_fan", "crc",
+                     "stuck", "off"]),     # follow = room settles where the AC setpoint puts it
     st.integers(18, 30),                     # remote setpoint
 )
 
 
-@settings(max_examples=300, deadline=None, suppress_health_check=[HealthCheck.too_slow])
-@given(blocks=st.lists(event_st, min_size=5, max_size=80), t0=st.floats(24, 32))
+@settings(max_examples=300, deadline=None, suppress_health_check=[HealthCheck.too_slow, HealthCheck.data_too_large])
+@given(blocks=st.lists(event_st, min_size=5, max_size=40), t0=st.floats(24, 32))
 def test_controller_commands_are_always_safe(blocks, t0):
     fw = DuetFirmware()
     fw.begin(20 * 3600 * 1000)
@@ -88,7 +89,10 @@ def test_controller_commands_are_always_safe(blocks, t0):
     for ticks, drift, rh, occ, ev, rsp in blocks:
         for k in range(ticks):
             now += 5000
-            temp = min(40.0, max(16.0, temp + drift / ticks))
+            if ev == "follow" and prev_believed is not None:
+                temp = prev_believed + 0.6          # a regulating AC: bed sits just above setpoint
+            else:
+                temp = min(40.0, max(16.0, temp + drift / ticks))
             i.now_ms = now
             i.temp_c = stuck if (ev == "stuck" and stuck is not None) else temp + ((k % 3) - 1) * 0.01
             i.rh = rh
@@ -138,5 +142,7 @@ AUDITED: list[int] = []
 
 
 def test_fuzz_actually_exercised_ac_commands():
-    # guards against a fuzz that never reaches the AC loop
-    assert sum(AUDITED) > 50, sum(AUDITED)
+    # Guards against a vacuous fuzz: the controller must actually have changed the AC,
+    # under the oracle's eye, many times across the generated histories.
+    print(f"AC changes audited: {sum(AUDITED)} across {len(AUDITED)} histories")
+    assert sum(AUDITED) > 100, sum(AUDITED)

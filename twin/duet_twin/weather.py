@@ -23,13 +23,17 @@ from .psychro import rh_from_w, w_from_rh
 # morning RH %, afternoon RH %, clear-sky peak horizontal irradiance W/m2).
 # Replace with the ISHRAE EPW for report numbers; these are labelled approximate.
 JAIPUR_NORMALS = {
+    3: (32.2, 15.4, 45, 20, 900),
     4: (37.8, 21.9, 35, 15, 950),
     5: (40.6, 25.9, 38, 18, 980),
     6: (39.3, 27.3, 55, 32, 900),
     7: (34.2, 26.1, 78, 62, 650),
     8: (32.4, 24.9, 82, 68, 600),
     9: (33.6, 23.5, 72, 50, 750),
+    10: (33.9, 19.6, 55, 30, 820),
 }
+MONTH_NAMES = {3: "March", 4: "April", 5: "May", 6: "June", 7: "July", 8: "August",
+               9: "September", 10: "October"}
 
 
 @dataclass

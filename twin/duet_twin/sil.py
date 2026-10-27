@@ -5,8 +5,27 @@ import ctypes as C
 import os
 from pathlib import Path
 
-LIB_DEFAULT = Path(__file__).resolve().parents[2] / "firmware" / "build" / (
-    "duet_sil.dll" if os.name == "nt" else "libduet_sil.so")
+import platform
+import sys
+
+FIRMWARE = Path(__file__).resolve().parents[2] / "firmware"
+_NAMES = {"win32": ["libduet_sil.dll", "duet_sil.dll"], "darwin": ["libduet_sil.dylib"]}.get(
+    sys.platform, ["libduet_sil.so"])
+_PREBUILT = FIRMWARE / "prebuilt" / f"{sys.platform}-{platform.machine().lower()}"
+
+
+def candidates() -> list[Path]:
+    """Where the firmware library may be, in the order we try them."""
+    out = []
+    if os.environ.get("DUET_SIL_LIB"):
+        out.append(Path(os.environ["DUET_SIL_LIB"]))
+    for d in (FIRMWARE / "build", FIRMWARE / "build" / "Release", FIRMWARE / "build" / "Debug", _PREBUILT):
+        out += [d / n for n in _NAMES]
+    return out
+
+
+def find_lib() -> Path | None:
+    return next((p for p in candidates() if p.exists()), None)
 
 MODES = ["auto", "user_hold", "safe", "vacant", "idle"]
 VERDICTS = ["approved", "out_of_range", "step_too_large", "too_soon", "hourly_limit",
@@ -38,12 +57,20 @@ class Outputs(C.Structure):
 _lib = None
 
 
+class FirmwareNotFound(RuntimeError):
+    pass
+
+
 def lib(path: str | Path | None = None):
     global _lib
     if _lib is None:
-        p = Path(path or os.environ.get("DUET_SIL_LIB", LIB_DEFAULT))
-        if not p.exists():
-            raise FileNotFoundError(f"{p} not found - build it: cmake -S firmware -B firmware/build && cmake --build firmware/build")
+        p = Path(path) if path else find_lib()
+        if p is None:
+            raise FirmwareNotFound(
+                "Duet firmware library not found. Run `python run.py` (it builds it), or:\n"
+                "  cmake -S firmware -B firmware/build -DCMAKE_BUILD_TYPE=Release\n"
+                "  cmake --build firmware/build --config Release\nLooked in:\n  "
+                + "\n  ".join(str(c) for c in candidates()))
         L = C.CDLL(str(p))
         L.duet_sil_create.restype = C.c_void_p
         L.duet_sil_destroy.argtypes = [C.c_void_p]
@@ -55,6 +82,22 @@ def lib(path: str | Path | None = None):
                                        C.c_char_p, C.c_int]
         L.duet_sil_pop_log.restype = C.c_int
         L.duet_sil_version.restype = C.c_char_p
+        L.duet_gov_create.restype = C.c_void_p
+        L.duet_gov_check.argtypes = [C.c_void_p, C.c_int64, C.c_int, C.c_int, C.c_int, C.c_float,
+                                     C.c_int, C.c_int, C.c_int]
+        L.duet_gov_record.argtypes = [C.c_void_p, C.c_int64]
+        L.duet_gov_destroy.argtypes = [C.c_void_p]
+        L.duet_sil_verdict_name.restype = C.c_char_p
+        L.duet_sil_mode_name.restype = C.c_char_p
+        # ABI check: a stale library with a different struct layout would corrupt memory.
+        if hasattr(L, "duet_sil_sizeof_inputs"):
+            si, so = L.duet_sil_sizeof_inputs(), L.duet_sil_sizeof_outputs()
+            if (si, so) != (C.sizeof(Inputs), C.sizeof(Outputs)):
+                raise RuntimeError(f"{p}: struct sizes {si}/{so} do not match Python "
+                                   f"{C.sizeof(Inputs)}/{C.sizeof(Outputs)} - rebuild the firmware library")
+        else:
+            raise RuntimeError(f"{p} is an old build - rebuild the firmware library")
+        L._duet_path = str(p)
         _lib = L
     return _lib
 
@@ -102,3 +145,7 @@ class DuetFirmware:
     @staticmethod
     def version() -> str:
         return lib().duet_sil_version().decode()
+
+    @staticmethod
+    def path() -> str:
+        return lib()._duet_path

@@ -39,7 +39,7 @@ def arm_spec(arm: str):
 @dataclass
 class Fault:
     kind: str          # sensor_stuck | sensor_drift | sensor_crc | sensor_absent | ir_burst |
-                       # humidity_spike | radar_absent | remote_press
+                       # humidity_spike | radar_absent | remote_press | remote_press_unseen
     start_s: float
     dur_s: float = 0.0
     value: float = 0.0
@@ -99,6 +99,10 @@ class SafetyMonitor:
 
 class Simulation:
     def __init__(self, sc: Scenario):
+        import copy
+        # Faults carry a `fired` flag; give each run its own copies so a Scenario can be reused.
+        sc = copy.copy(sc)
+        sc.faults = [copy.copy(f) for f in sc.faults]
         self.sc = sc
         rng = np.random.default_rng(sc.seed)
         self.rng_user = np.random.default_rng(sc.seed + 1000)   # same across arms
@@ -140,6 +144,8 @@ class Simulation:
         self.out = None
         self.extra_faults: list[Fault] = []
         self.missed_user_frames = 0
+        self.last_ir = None        # (t, delivered, setpoint) of the last AC frame burst
+        self.last_fan_cmd = None   # (t, step)
 
     # ----------------------------------------------------------------- helpers
     def faults_active(self, t: float):
@@ -196,10 +202,10 @@ class Simulation:
                     self.fan.step = self.user.p.fan_step_on_arrival
                     self.events.append((t, "user", f"arrives, AC on at {act[2]} C"))
                 elif act[0] == "ac":
-                    was_on = self.ac.s.power
                     self._user_frame(act[1], act[2], power_on=False)
                     if not act[1]:
-                        self.fan.step = 0 if not self.is_duet else self.fan.step
+                        if not self.is_duet:
+                            self.fan.step = 0   # Duet switches its own fan off when vacant
                         self.events.append((t, "user", "leaves, AC off"))
                     else:
                         self.events.append((t, "user", f"feels {'warm' if self._pmv_cache > 0 else 'cold'}, sets AC {act[2]} C"))
@@ -253,14 +259,14 @@ class Simulation:
                 self.ir_decisions.append({"t": t, "intended": int(o.ac_setpoint), "ok_first": None,
                                           "ok_final": None})
             if o.ac_frames:
-                delivered = False
-                for _ in range(o.ac_frames):
-                    if self.ir.delivered():
-                        delivered = True
+                # each frame is an independent try; the AC acts if any one arrives
+                delivered = any([self.ir.delivered() for _ in range(o.ac_frames)])
+                self.last_ir = (t, delivered, int(o.ac_setpoint))
                 if delivered:
                     self.ac.s.setpoint = int(o.ac_setpoint)
                     self.ac.s.power = bool(o.ac_power)
             if o.fan_cmd:
+                self.last_fan_cmd = (t, int(o.fan_step))
                 if sc.device == "native" or self.ir.delivered():
                     self.fan.step = int(o.fan_step)
             self._believed_prev = int(o.believed_setpoint)
