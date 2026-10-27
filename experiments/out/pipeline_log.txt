@@ -1,0 +1,38 @@
+PASS  Sensor frozen for 60 min                 safe 100% of fault window after 11 min, 0 AC commands, fan held=True, recovered=True
+PASS  Sensor CRC errors for 30 min             safe 100% of window, 0 AC commands
+PASS  Sensor reads 2 C high for 4 h            no rule broken; reads 2 C warm so Duet errs cool (max true PMV +0.30); slow drift needs a second sensor to detect
+PASS  IR blocked for 60 min during raises      AC matched Duet's belief 100% of the time after the burst
+PASS  Humidity spike above 60 %                RH peaked 71%; 0 raises above 60 % RH
+PASS  User presses remote: 23 C at 01:00       0 Duet commands in the 2 h hold; Duet tracked the user's own settings 100% of it
+PASS  User's remote frame missed by Duet       Duet never saw the frame; inferred a user change 1x from the room; 0 commands in the 2 h after
+PASS  Radar misses a still sleeper 30 min      vacant 0% of a 30 min radar dropout while asleep
+  20/360 runs, 77 s
+  40/360 runs, 153 s
+  60/360 runs, 231 s
+  80/360 runs, 311 s
+  100/360 runs, 392 s
+  120/360 runs, 473 s
+  140/360 runs, 549 s
+  160/360 runs, 631 s
+  180/360 runs, 708 s
+  200/360 runs, 788 s
+  220/360 runs, 866 s
+  240/360 runs, 940 s
+  260/360 runs, 951 s
+  280/360 runs, 964 s
+  300/360 runs, 976 s
+  320/360 runs, 988 s
+  340/360 runs, 1000 s
+  360/360 runs, 1013 s
+        weather vs  n  ac_saving_median  ac_saving_p5  ac_saving_p95  net_saving_median  duet_in_band  base_in_band  duet_presses_per_night  base_presses_per_night  duet_ac_kwh_night  base_ac_kwh_night  ir_success  safety_violations  missed_user_frames  inferred_user_changes  duet_blanket_share  base_blanket_share
+    hottest_day b1 30            -0.011        -0.015          0.066             -0.018         0.792         0.358                   0.900                   2.067              3.802              3.949         1.0                  0                   1                      3               0.007               0.019
+    hottest_day b2 30             0.005         0.000          0.072              0.002         0.792         0.585                   0.900                   1.000              3.802              4.003         1.0                  0                   1                      3               0.007               0.194
+    hottest_day b3 30            -0.015        -0.021          0.062             -0.022         0.792         0.355                   0.900                   2.100              3.802              3.932         1.0                  0                   1                      3               0.007               0.022
+   monsoon_week b1 30             0.314         0.083          0.379              0.302         0.962         0.878                   0.000                   0.105              2.533              3.591         1.0                  0                  13                     15               0.238               0.935
+   monsoon_week b2 30             0.187        -0.021          0.295              0.191         0.962         0.792                   0.000                   0.933              2.533              3.031         1.0                  0                  13                     15               0.238               0.944
+   monsoon_week b3 30             0.426         0.271          0.493              0.413         0.962         0.742                   0.000                   1.462              2.533              4.282         1.0                  0                  13                     15               0.238               0.942
+premonsoon_week b1 30             0.290         0.253          0.320              0.281         0.958         0.864                   0.005                   0.195              3.874              5.516         1.0                  0                  14                      2               0.041               0.939
+premonsoon_week b2 30             0.200         0.156          0.221              0.201         0.958         0.792                   0.005                   1.000              3.874              4.874         1.0                  0                  14                      2               0.041               0.945
+premonsoon_week b3 30             0.383         0.341          0.407              0.374         0.958         0.569                   0.005                   1.700              3.874              6.319         1.0                  0                  14                      2               0.041               0.937
+figures written to /home/claude/duet/experiments/out
+exit 0

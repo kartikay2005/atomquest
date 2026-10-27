@@ -1,0 +1,6 @@
+firmware/build/
+.pio/
+__pycache__/
+*.pyc
+.hypothesis/
+.pytest_cache/

@@ -1,0 +1,5 @@
+check,twin,published,pass
+"AC saving per 1 C, relative to 24 C",9.7%,11 %/C field (BEE quotes ~6 %); band 8-13 %,True
+AC saving at 26 C vs 24 C,20.9%,21 % measured (band 15-27 %),True
+AC saving at 28 C vs 24 C,38.9%,44 % measured (band 35-50 %),True
+Comfort at 28 C with fan step 2 (mean PMV),+0.32,acceptable: at or below +0.5,True

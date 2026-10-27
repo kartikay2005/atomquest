@@ -1,0 +1,28 @@
+  20/360 runs, 84 s
+  40/360 runs, 162 s
+  60/360 runs, 237 s
+  80/360 runs, 313 s
+  100/360 runs, 389 s
+  120/360 runs, 463 s
+  140/360 runs, 537 s
+  160/360 runs, 618 s
+  180/360 runs, 693 s
+  200/360 runs, 767 s
+  220/360 runs, 841 s
+  240/360 runs, 913 s
+  260/360 runs, 923 s
+  280/360 runs, 934 s
+  300/360 runs, 944 s
+  320/360 runs, 955 s
+  340/360 runs, 966 s
+  360/360 runs, 976 s
+        weather vs  n  ac_saving_median  ac_saving_p5  ac_saving_p95  net_saving_median  duet_in_band  base_in_band  duet_presses_per_night  base_presses_per_night  duet_ac_kwh_night  base_ac_kwh_night  ir_success  safety_violations
+    hottest_day b1 30            -0.011        -0.015          0.112             -0.018         0.801         0.358                   0.900                   2.067              3.711              3.949         1.0                  0
+    hottest_day b2 30             0.005         0.000          0.117              0.002         0.801         0.585                   0.900                   1.000              3.711              4.003         1.0                  0
+    hottest_day b3 30            -0.015        -0.021          0.107             -0.022         0.801         0.355                   0.900                   2.100              3.711              3.932         1.0                  0
+   monsoon_week b1 30             0.445         0.186          0.478              0.410         0.981         0.878                   0.005                   0.105              2.100              3.591         1.0                  0
+   monsoon_week b2 30             0.340         0.073          0.403              0.320         0.981         0.792                   0.005                   0.933              2.100              3.031         1.0                  0
+   monsoon_week b3 30             0.530         0.334          0.575              0.503         0.981         0.742                   0.005                   1.462              2.100              4.282         1.0                  0
+premonsoon_week b1 30             0.315         0.276          0.344              0.305         0.964         0.864                   0.024                   0.195              3.731              5.516         1.0                  1
+premonsoon_week b2 30             0.230         0.183          0.251              0.229         0.964         0.792                   0.024                   1.000              3.731              4.874         1.0                  1
+premonsoon_week b3 30             0.407         0.361          0.426              0.400         0.964         0.569                   0.024                   1.700              3.731              6.319         1.0                  1
